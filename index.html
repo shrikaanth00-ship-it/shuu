@@ -2897,6 +2897,8 @@ const CITY = CONFIG.CITY;
       log('ThingSpeak uplink failed: '+e.message, 'error');
       document.getElementById('statusText').textContent = 'ERROR';
       document.getElementById('statusText').style.color = 'var(--red)';
+      const dot = document.getElementById('statusDot');
+      if (dot) dot.style.background = 'var(--red)';
       
       updateSensorHealth('healthTS', 'health-err', 'FAILED');
       updateSensorHealth('healthMQ2', 'health-warn', 'UNKNOWN');
@@ -3086,11 +3088,31 @@ const CITY = CONFIG.CITY;
   // Background monitor for staleness (runs every 5 seconds)
   setInterval(() => {
     const now = Date.now();
+    
+    // Update freshness timer
+    const freshnessEl = document.getElementById('freshnessTime');
+    if (freshnessEl) {
+      if (lastTSFetchSuccessTime > 0) {
+        const diffSecs = Math.round((now - lastTSFetchSuccessTime) / 1000);
+        freshnessEl.textContent = `${diffSecs}s ago`;
+      } else {
+        freshnessEl.textContent = "--s ago";
+      }
+    }
+
     if (lastTSFetchSuccessTime > 0 && (now - lastTSFetchSuccessTime) > 60000) {
       updateSensorHealth('healthTS', 'health-warn', 'STALE');
       updateSensorHealth('healthMQ2', 'health-warn', 'STALE');
       updateSensorHealth('healthDHT11', 'health-warn', 'STALE');
       log("ThingSpeak telemetry link gone stale (no payload >60s).", "warn");
+      
+      const stText = document.getElementById('statusText');
+      if (stText) {
+        stText.textContent = 'STALE';
+        stText.style.color = 'var(--yellow)';
+      }
+      const stDot = document.getElementById('statusDot');
+      if (stDot) stDot.style.background = 'var(--yellow)';
     }
     if (lastOWFetchSuccessTime > 0 && (now - lastOWFetchSuccessTime) > 120000) {
       updateSensorHealth('healthOW', 'health-warn', 'STALE');
