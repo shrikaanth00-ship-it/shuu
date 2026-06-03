@@ -1845,6 +1845,7 @@ const CITY = CONFIG.CITY;
   let totalUplinksSuccessful = 0;
   let currentAlarmState = 'Safe';
   let alarmIntervalId = null;
+  let audioCtx = null;
 
   // CLOCK
   setInterval(() => {
@@ -1873,6 +1874,15 @@ const CITY = CONFIG.CITY;
 
     // Track in notification history
     addNotification(msg, type);
+
+    // Log to developer console for easier browser diagnostics
+    if (type === 'error') {
+      console.error(`[AirWatch Error] ${msg}`);
+    } else if (type === 'warn') {
+      console.warn(`[AirWatch Warning] ${msg}`);
+    } else {
+      console.log(`[AirWatch Info] ${msg}`);
+    }
   }
 
   function addNotification(message, type) {
@@ -2192,10 +2202,14 @@ const CITY = CONFIG.CITY;
   function playSynthesizedBeep(freq, duration, gainVal) {
     if (alarmMuted) return;
     try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      if (ctx.state === 'suspended') {
-        ctx.resume();
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       }
+      const ctx = audioCtx;
+      if (ctx.state === 'suspended') {
+        ctx.resume().catch(() => {});
+      }
+      
       const osc = ctx.createOscillator();
       const gainNode = ctx.createGain();
       
@@ -2208,12 +2222,28 @@ const CITY = CONFIG.CITY;
       // Smooth exponential volume drop to prevent speaker crackles
       gainNode.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + duration / 1000);
       
+      osc.onended = () => {
+        osc.disconnect();
+        gainNode.disconnect();
+      };
+      
       osc.start();
       osc.stop(ctx.currentTime + duration / 1000);
     } catch(e) {
       console.warn("Audio Context playback failed or was blocked", e);
     }
   }
+
+  // Auto-resume AudioContext on first user gesture to clear browser autoplay restrictions
+  const resumeAudioCtxGesture = () => {
+    if (audioCtx && audioCtx.state === 'suspended') {
+      audioCtx.resume().catch(() => {});
+    }
+    window.removeEventListener('click', resumeAudioCtxGesture);
+    window.removeEventListener('keydown', resumeAudioCtxGesture);
+  };
+  window.addEventListener('click', resumeAudioCtxGesture);
+  window.addEventListener('keydown', resumeAudioCtxGesture);
 
   function toggleAlertAudio() {
     alarmMuted = !alarmMuted;
