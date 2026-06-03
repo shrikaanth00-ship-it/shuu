@@ -1106,6 +1106,112 @@
         grid-template-columns: 1fr;
       }
     }
+
+    /* HEALTH LIST & HAZARD ALERT BUTTONS */
+    .sensor-health-list {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--dim);
+    }
+    .sensor-health-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .sensor-health-badge {
+      font-family: var(--mono);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 9px;
+      padding: 1px 4px;
+      border-radius: 3px;
+    }
+    .health-ok { color: var(--green); background: rgba(16, 185, 129, 0.08); }
+    .health-warn { color: var(--yellow); background: rgba(245, 158, 11, 0.08); }
+    .health-err { color: var(--red); background: rgba(239, 68, 68, 0.08); }
+    
+    .btn-action {
+      background: linear-gradient(135deg, #0ea5e9 0%, #10b981 100%);
+      border: none;
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-family: var(--serif);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 12px rgba(14, 165, 233, 0.15);
+    }
+    .btn-action:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(14, 165, 233, 0.25);
+    }
+    .btn-mute {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      color: var(--dim);
+      padding: 3px 6px;
+      font-size: 9px;
+      border-radius: 4px;
+      cursor: pointer;
+      text-transform: uppercase;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .btn-mute:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: #fff;
+    }
+    .btn-mute.active {
+      border-color: rgba(239, 68, 68, 0.3);
+      color: var(--red);
+      background: rgba(239, 68, 68, 0.05);
+    }
+
+    #hazardAlertBanner {
+      display: none;
+      animation: slideInDown 0.35s ease;
+    }
+    @keyframes slideInDown {
+      from { transform: translateY(-10px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    /* TREND delta badge colors */
+    .trend-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 9.5px;
+      font-weight: 600;
+      font-family: var(--mono);
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-top: 6px;
+    }
+    .trend-up {
+      color: var(--red);
+      background: rgba(239, 68, 68, 0.06);
+    }
+    .trend-down {
+      color: var(--green);
+      background: rgba(16, 185, 129, 0.06);
+    }
+    .trend-stable {
+      color: var(--dim);
+      background: rgba(255, 255, 255, 0.03);
+    }
   </style>
 </head>
 <body>
@@ -1148,7 +1254,30 @@
       <div class="status-dot" id="statusDot"></div>
       <span id="statusText">CONNECTING</span>
     </div>
-    <div class="clock" id="clock">--:--:--</div>
+    <!-- TELEMETRY HEALTH MONITOR -->
+    <div class="sensor-health-list">
+      <div class="sensor-health-row">
+        <span>MQ-2 Gas Sensor:</span>
+        <span class="sensor-health-badge health-ok" id="healthMQ2">NOMINAL</span>
+      </div>
+      <div class="sensor-health-row">
+        <span>DHT11 Temp/Hum:</span>
+        <span class="sensor-health-badge health-ok" id="healthDHT11">NOMINAL</span>
+      </div>
+      <div class="sensor-health-row">
+        <span>ThingSpeak API:</span>
+        <span class="sensor-health-badge health-ok" id="healthTS">NOMINAL</span>
+      </div>
+      <div class="sensor-health-row">
+        <span>OpenWeather API:</span>
+        <span class="sensor-health-badge health-ok" id="healthOW">NOMINAL</span>
+      </div>
+      <div class="sensor-health-row" style="margin-top:4px;">
+        <span>Hazard Alarm:</span>
+        <button id="alertAudioToggle" onclick="toggleAlertAudio()" class="btn-mute">ACTIVE</button>
+      </div>
+    </div>
+    <div class="clock" id="clock" style="margin-top:8px;">--:--:--</div>
   </div>
 </nav>
 
@@ -1160,11 +1289,26 @@
       <h1>Intelligence Command Center</h1>
       <p>Atmospheric Telemetry & Smart City Operations</p>
     </div>
-    <div class="system-status-badge">
-      <div class="indicator-ring"></div>
-      <span id="footerChannel">CH ------ · THINGSPEAK</span>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <button onclick="generatePDFReport()" class="btn-action">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export Report
+      </button>
+      <div class="system-status-badge">
+        <div class="indicator-ring"></div>
+        <span id="footerChannel">CH ------ · THINGSPEAK</span>
+      </div>
     </div>
   </header>
+
+  <!-- HAZARD ALERT BANNER -->
+  <div id="hazardAlertBanner" style="background: rgba(239, 68, 68, 0.15); border: 1px solid var(--red); color: #fff; padding: 12px 16px; border-radius: 12px; margin-bottom: 20px; font-weight: 500; align-items: center; justify-content: space-between; font-size: 13px;">
+    <div style="display:flex; align-items:center; gap:8px;">
+      <span style="display:inline-block; width:8px; height:8px; background:var(--red); border-radius:50%; animation: blink 1s infinite;"></span>
+      <strong>HAZARD DETECTED:</strong> <span id="hazardAlertText">High gas concentrations. Please ventilate!</span>
+    </div>
+    <button onclick="dismissHazardAlert()" style="background:transparent; border:none; color:var(--dim); cursor:pointer; font-weight:600; font-size:12px;">DISMISS</button>
+  </div>
 
   <!-- HERO SECTION: AQI STATUS & METEOROLOGICAL CONTEXT -->
   <div class="hero-split-grid">
@@ -1176,7 +1320,7 @@
         <div class="hero-ppm-display">
           <div class="hero-ppm-label">CURRENT READING</div>
           <div class="hero-ppm-value" id="statusPPM">--</div>
-          <div class="hero-ppm-unit">Parts Per Million</div>
+          <div class="hero-ppm-unit"><span id="aqiScoreDisplay" style="color:var(--amber); font-weight:600; margin-right:6px;">Score: --/100</span> · PPM</div>
         </div>
         <div class="hero-status-badge-wrap">
           <div class="status-big" id="statusWord">SCANNING</div>
@@ -1328,6 +1472,75 @@
     </div>
   </div>
 
+  <!-- ENVIRONMENTAL INTELLIGENCE & CONTROL PANEL -->
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
+    <!-- LEFT COLUMN: COGNITIVE SCORES & DATA INTEGRITY -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+      
+      <!-- INTELLIGENCE INDEX METRICS -->
+      <div class="panel">
+        <div class="panel-label">Environmental Health & Sustainability Indices</div>
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 10px;">
+          <!-- EHI CARD -->
+          <div style="background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.03); border-radius: 12px; padding: 12px; text-align: center;">
+            <div style="font-size: 9px; color: var(--dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Health Index (EHI)</div>
+            <div id="ehiVal" style="font-family: var(--serif); font-size: 24px; font-weight: 700; color: #fff; margin-top: 8px;">--/100</div>
+            <span id="ehiBadge" class="sensor-health-badge health-ok" style="margin-top: 6px; display: inline-block;">SCANNING</span>
+          </div>
+          <!-- COMFORT CARD -->
+          <div style="background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.03); border-radius: 12px; padding: 12px; text-align: center;">
+            <div style="font-size: 9px; color: var(--dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Comfort Score</div>
+            <div id="comfortVal" style="font-family: var(--serif); font-size: 24px; font-weight: 700; color: #fff; margin-top: 8px;">--/100</div>
+            <span id="comfortBadge" class="sensor-health-badge health-ok" style="margin-top: 6px; display: inline-block;">SCANNING</span>
+          </div>
+          <!-- GREEN SCORE CARD -->
+          <div style="background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.03); border-radius: 12px; padding: 12px; text-align: center;">
+            <div style="font-size: 9px; color: var(--dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Green Score</div>
+            <div id="greenVal" style="font-family: var(--serif); font-size: 24px; font-weight: 700; color: #fff; margin-top: 8px;">--/100</div>
+            <span id="greenBadge" class="sensor-health-badge health-ok" style="margin-top: 6px; display: inline-block;">SCANNING</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- RISK PREDICTION & DATA INTEGRITY -->
+      <div class="panel">
+        <div class="panel-label">Risk Prediction & Telemetry Integrity</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 10px;">
+          <!-- RISK PREDICTION -->
+          <div style="background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.03); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between;">
+            <div style="font-size: 9px; color: var(--dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Expected Trend (30m)</div>
+            <div>
+              <div id="predictStatus" style="font-family: var(--serif); font-size: 16px; font-weight: 700; color: #fff;">SCANNING</div>
+              <div style="font-size: 10px; color: var(--dim); margin-top: 4px;">Confidence: <span id="predictConf" style="font-family: var(--mono); color: var(--amber);">--%</span></div>
+            </div>
+          </div>
+          <!-- DATA QUALITY -->
+          <div style="background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.03); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between;">
+            <div style="font-size: 9px; color: var(--dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Data Integrity Score</div>
+            <div>
+              <div id="dataQualityVal" style="font-family: var(--serif); font-size: 16px; font-weight: 700; color: #fff;">--/100</div>
+              <div style="font-size: 10px; color: var(--dim); margin-top: 4px;">Telemetry Checksum</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT COLUMN: ALERTS, INCIDENTS & COGNITIVE OBSERVATIONS -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+      
+      <!-- ALERTS & INCIDENT DETECTION RECORD -->
+      <div class="panel" style="flex: 1; display: flex; flex-direction: column;">
+        <div class="panel-label">Incident Registry & Notifications Log</div>
+        <div id="incidentLogPanel" style="flex: 1; height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 4px; margin-top: 10px;">
+          <div style="font-size: 11px; color: var(--dim2); text-align: center; padding: 20px;">No incidents detected. System nominal.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- SYSTEM ACTIVITY TIMELINE -->
   <div class="panel activity-section-panel">
     <div class="panel-label">System Transmission Log & Operational Audit</div>
@@ -1348,9 +1561,15 @@
       <h1>Historical Diagnostics Workspace</h1>
       <p>Time-series analysis and analytical ledger audits (last 30 intervals)</p>
     </div>
-    <div class="system-status-badge">
-      <div class="indicator-ring" style="background:#0ea5e9;"></div>
-      <span>Auto-Refresh 60s</span>
+    <div style="display:flex; align-items:center; gap:12px;">
+      <button onclick="generatePDFReport()" class="btn-action">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export Report
+      </button>
+      <div class="system-status-badge">
+        <div class="indicator-ring" style="background:#0ea5e9;"></div>
+        <span>Auto-Refresh 60s</span>
+      </div>
     </div>
   </header>
 
@@ -1374,6 +1593,29 @@
       <div class="stat-label">Peak Session Gas</div>
       <div class="stat-val" id="peakGas">--</div>
       <div class="stat-sub">Session maximum recorded level</div>
+    </div>
+  </div>
+
+  <div class="stat-row" id="histStatsSecondary" style="margin-top: -12px; margin-bottom: 24px;">
+    <div class="stat-card">
+      <div class="stat-label">Lowest Session Gas</div>
+      <div class="stat-val" id="minGas">--</div>
+      <div class="stat-sub">Minimum gas level recorded</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Lowest Ambient Temp</div>
+      <div class="stat-val" id="minTemp">--</div>
+      <div class="stat-sub">Minimum temperature recorded</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Lowest Relative Hum</div>
+      <div class="stat-val" id="minHum">--</div>
+      <div class="stat-sub">Minimum humidity recorded</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Data Checksum Status</div>
+      <div class="stat-val" id="histDataQuality">--/100</div>
+      <div class="stat-sub">Historical Data Quality Index</div>
     </div>
   </div>
 
@@ -1526,6 +1768,19 @@ const CITY = CONFIG.CITY;
   let gasChart, tempChart, humChart;
   let histGasChart, histTempChart, histHumChart;
 
+  let lastTSFetchSuccessTime = 0;
+  let lastOWFetchSuccessTime = 0;
+  let alarmMuted = false;
+
+  let prevGas = null;
+  let prevTemp = null;
+  let prevHum = null;
+
+  // SYSTEM LOGS & INCIDENTS STATE
+  let incidents = [];
+  let notifications = [];
+  let outdoorAQIValue = 1; // Default to 1 (Excellent)
+
   // CLOCK
   setInterval(() => {
     document.getElementById('clock').textContent = new Date().toTimeString().slice(0,8);
@@ -1540,7 +1795,7 @@ const CITY = CONFIG.CITY;
     if (id === 'history') fetchHistory();
   }
 
-  // LOG
+  // LOG / NOTIFICATION CENTER
   function log(msg, type='info') {
     const p = document.getElementById('logPanel');
     const t = new Date().toTimeString().slice(0,8);
@@ -1550,6 +1805,15 @@ const CITY = CONFIG.CITY;
     row.innerHTML = `<span class="log-t">${t}</span><span class="log-m" style="color:${c[type]}">${msg}</span>`;
     p.insertBefore(row, p.firstChild);
     if (p.children.length > 60) p.removeChild(p.lastChild);
+
+    // Track in notification history
+    addNotification(msg, type);
+  }
+
+  function addNotification(message, type) {
+    const time = new Date().toTimeString().slice(0,8);
+    notifications.unshift({ message, type, time });
+    if (notifications.length > 30) notifications.pop();
   }
 
   // CHART DEFAULTS
@@ -1580,16 +1844,427 @@ const CITY = CONFIG.CITY;
   tempChart = makeChart('tempChart', 'rgb(212,168,112)');
   humChart = makeChart('humChart', 'rgb(143,188,90)');
 
+  // AQI SCORE ENGINE
+  function calculateAQIScore(ppm) {
+    let score = 0;
+    if (ppm <= 200) {
+      score = 100 - (ppm / 200) * 20;
+    } else if (ppm <= 500) {
+      score = 80 - ((ppm - 200) / 300) * 20;
+    } else if (ppm <= 1000) {
+      score = 60 - ((ppm - 500) / 500) * 20;
+    } else {
+      score = Math.max(0, 40 - ((ppm - 1000) / 1000) * 40);
+    }
+    return Math.round(score);
+  }
+
   // AQI INFO
   function aqiInfo(ppm) {
-    if (ppm < 200) return { word: 'CLEAN', color: 'var(--green)', advisory: 'Air quality is within safe parameters. All readings nominal. No action required.' };
-    if (ppm < 500) return { word: 'MODERATE', color: 'var(--yellow)', advisory: 'Acceptable conditions. Sensitive individuals may experience minor effects. Monitor closely.' };
-    if (ppm < 1000) return { word: 'POOR', color: 'var(--amber2)', advisory: 'Elevated gas concentration detected. Open windows and ventilate the area immediately.' };
-    return { word: 'DANGER', color: 'var(--red)', advisory: 'CRITICAL: Hazardous gas levels. Evacuate area and ventilate. Do not use open flame.' };
+    const score = calculateAQIScore(ppm);
+    if (score >= 90) return { word: 'EXCELLENT', color: 'var(--green)', advisory: 'Air quality is within safe parameters. All readings nominal.' };
+    if (score >= 75) return { word: 'GOOD', color: 'var(--green2)', advisory: 'Air quality is good. Indoor atmosphere is healthy.' };
+    if (score >= 50) return { word: 'MODERATE', color: 'var(--yellow)', advisory: 'Moderate air quality. Sensitive individuals should monitor conditions closely.' };
+    if (score >= 25) return { word: 'POOR', color: 'var(--amber2)', advisory: 'Elevated gas concentration detected. Open windows to ventilate area immediately.' };
+    return { word: 'HAZARDOUS', color: 'var(--red)', advisory: 'CRITICAL: Hazardous gas levels! Evacuate area and ventilate space immediately.' };
   }
 
   function aqiLabel(aqi) {
     return ['--','GOOD','FAIR','MODERATE','POOR','VERY POOR'][aqi] || '--';
+  }
+
+  // ENVIRONMENTAL HEALTH INDEX (EHI) ENGINE
+  function calculateEHI(gas, temp, hum, outAqiIndex) {
+    const gasScore = calculateAQIScore(gas);
+    const tempScore = Math.max(0, 100 - Math.abs(temp - 22.5) * 6.5);
+    const humScore = Math.max(0, 100 - Math.abs(hum - 50) * 2.2);
+    const outAqiScore = (5 - Math.max(1, Math.min(5, outAqiIndex || 1))) * 25;
+
+    const ehi = (gasScore * 0.4) + (tempScore * 0.2) + (humScore * 0.2) + (outAqiScore * 0.2);
+    return Math.round(ehi);
+  }
+
+  function getEHIBadge(ehi) {
+    if (ehi >= 90) return { text: "Excellent", class: "health-ok" };
+    if (ehi >= 75) return { text: "Good", class: "health-ok" };
+    if (ehi >= 50) return { text: "Moderate", class: "health-warn" };
+    if (ehi >= 25) return { text: "Poor", class: "health-err" };
+    return { text: "Hazardous", class: "health-err" };
+  }
+
+  // INDOOR COMFORT SCORE ENGINE
+  function calculateComfortScore(temp, hum) {
+    const tempComfort = Math.max(0, 100 - Math.abs(temp - 22) * 8);
+    const humComfort = Math.max(0, 100 - Math.abs(hum - 45) * 2.2);
+    const comfort = (tempComfort * 0.6) + (humComfort * 0.4);
+    return Math.round(comfort);
+  }
+
+  function getComfortBadge(comfort) {
+    if (comfort >= 90) return { text: "Optimal", class: "health-ok" };
+    if (comfort >= 75) return { text: "Comfortable", class: "health-ok" };
+    if (comfort >= 50) return { text: "Uncomfortable", class: "health-warn" };
+    return { text: "Critical", class: "health-err" };
+  }
+
+  // SUSTAINABILITY GREEN SCORE ENGINE
+  function calculateGreenScore(gas, comfortScore, ehi) {
+    const aqiScore = calculateAQIScore(gas);
+    const green = (aqiScore * 0.5) + (comfortScore * 0.25) + (ehi * 0.25);
+    return Math.round(green);
+  }
+
+  function getGreenBadge(green) {
+    if (green >= 85) return { text: "Sustainable", class: "health-ok" };
+    if (green >= 60) return { text: "Moderate", class: "health-warn" };
+    return { text: "Poor", class: "health-err" };
+  }
+
+  // AIR QUALITY RISK PREDICTION
+  function predictAirQuality(feeds) {
+    if (feeds.length < 4) return { status: "STABLE", confidence: 75 };
+    const gasValues = feeds.map(f => parseFloat(f.field1) || 0);
+    
+    let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+    const n = gasValues.length;
+    for (let i = 0; i < n; i++) {
+      sumX += i;
+      sumY += gasValues[i];
+      sumXY += i * gasValues[i];
+      sumXX += i * i;
+    }
+    const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+    
+    // Project 30 minutes (12 cycles at 2.5 min sample rate)
+    const latestGas = gasValues[n - 1];
+    const projectedGas = Math.max(0, latestGas + slope * 12);
+    const projectedScore = calculateAQIScore(projectedGas);
+    
+    let status = "EXCELLENT";
+    if (projectedScore < 25) status = "HAZARDOUS";
+    else if (projectedScore < 50) status = "POOR";
+    else if (projectedScore < 75) status = "MODERATE";
+    else if (projectedScore < 90) status = "GOOD";
+
+    let diffSum = 0;
+    for (let i = 1; i < n; i++) {
+      diffSum += Math.abs(gasValues[i] - gasValues[i - 1]);
+    }
+    const avgDiff = diffSum / (n - 1);
+    const confidence = Math.max(50, Math.min(95, Math.round(92 - avgDiff * 0.1)));
+    
+    return { status, confidence };
+  }
+
+  // SMART RECOMMENDATIONS ENGINE
+  function getSmartRecommendation(gas, temp, hum, outdoorAqi) {
+    let recs = [];
+    const score = calculateAQIScore(gas);
+    const comfort = calculateComfortScore(temp, hum);
+    
+    if (score < 25) {
+      recs.push("Air quality is hazardous: evacuate area immediately.");
+    } else if (score < 50) {
+      recs.push("Air quality is poor: open windows for ventilation.");
+    } else if (score < 75) {
+      recs.push("Occupancy warning: reduce density if gas continues to rise.");
+    } else {
+      recs.push("Air quality is nominal.");
+    }
+
+    if (comfort < 50) {
+      recs.push("Climate comfort is critical: activate thermal comfort systems.");
+    } else if (comfort < 75) {
+      recs.push("Thermal environment is suboptimal.");
+    } else {
+      recs.push("Indoor climate is stable and comfortable.");
+    }
+
+    if (temp > 28) {
+      recs.push("Humidity is approaching threshold; use climate control.");
+    }
+
+    return recs.join(" | ");
+  }
+
+  // SENSOR HEALTH STATUS UPDATER
+  function updateSensorHealth(sensorId, statusClass, statusText) {
+    const badge = document.getElementById(sensorId);
+    if (!badge) return;
+    badge.className = `sensor-health-badge ${statusClass}`;
+    badge.textContent = statusText;
+  }
+
+  // DATA QUALITY MONITOR
+  function monitorDataQuality(gas, temp, hum) {
+    let anomalies = 0;
+    if (gas === 0 && temp === 0 && hum === 0) {
+      log("[DATA QUALITY] Blank payload block detected (missing sensor inputs)!", "error");
+      anomalies += 3;
+    }
+    if (prevGas !== null) {
+      const gasDiff = Math.abs(gas - prevGas);
+      if (gasDiff > 300) {
+        log(`[DATA QUALITY] Gas sensor spike detected: abrupt jump of ${gasDiff.toFixed(0)} PPM!`, "warn");
+        anomalies++;
+      }
+      if (gas === prevGas) {
+        // Repeated identical readings could indicate frozen sensor
+        anomalies += 0.5;
+      }
+    }
+    if (prevTemp !== null) {
+      const tempDiff = Math.abs(temp - prevTemp);
+      if (tempDiff > 5) {
+        log(`[DATA QUALITY] Temperature drift detected: sudden change of ${tempDiff.toFixed(1)}°C!`, "warn");
+        anomalies++;
+      }
+    }
+    if (prevHum !== null) {
+      const humDiff = Math.abs(hum - prevHum);
+      if (humDiff > 20) {
+        log(`[DATA QUALITY] Humidity drift detected: sudden shift of ${humDiff.toFixed(1)}%!`, "warn");
+        anomalies++;
+      }
+    }
+    
+    prevGas = gas;
+    prevTemp = temp;
+    prevHum = hum;
+
+    const dataScore = Math.max(0, 100 - Math.round(anomalies * 15));
+    document.getElementById('dataQualityVal').textContent = `${dataScore}/100`;
+  }
+
+  // WARNING AUDIO ALARM SYNTH
+  function toggleAlertAudio() {
+    alarmMuted = !alarmMuted;
+    const btn = document.getElementById('alertAudioToggle');
+    if (alarmMuted) {
+      btn.textContent = 'MUTED';
+      btn.classList.add('active');
+      log("Hazard audio alarm muted.", "warn");
+    } else {
+      btn.textContent = 'ACTIVE';
+      btn.classList.remove('active');
+      log("Hazard audio alarm activated.", "ok");
+    }
+  }
+
+  function playWarningBeep() {
+    if (alarmMuted) return;
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, ctx.currentTime);
+      gain.gain.setValueAtTime(0.15, ctx.currentTime);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.35);
+    } catch(e) {
+      console.warn("Audio Context playback failed", e);
+    }
+  }
+
+  function dismissHazardAlert() {
+    document.getElementById('hazardAlertBanner').style.display = 'none';
+    log("Hazard warning banner dismissed by operator.", "info");
+  }
+
+  // INCIDENT DETECTION LOGIC
+  function detectIncidents(gas, temp, hum, feeds) {
+    if (feeds.length < 2) return;
+    const latest = feeds[feeds.length - 1];
+    const previous = feeds[feeds.length - 2];
+    const lastGas = parseFloat(latest.field1) || 0;
+    const prevGasVal = parseFloat(previous.field1) || 0;
+    
+    // Check sudden gas spike (>35% in last interval)
+    if (prevGasVal > 0) {
+      const pctChange = ((lastGas - prevGasVal) / prevGasVal) * 100;
+      if (pctChange > 35) {
+        addIncident("High", `Gas concentration surged by ${pctChange.toFixed(0)}% in 5 minutes!`);
+      }
+    }
+    
+    // Check rapid temp shift (>3C)
+    const lastTemp = parseFloat(latest.field2) || 0;
+    const prevTempVal = parseFloat(previous.field2) || 0;
+    if (prevTempVal > 0) {
+      const tempDiff = Math.abs(lastTemp - prevTempVal);
+      if (tempDiff > 3) {
+        addIncident("Medium", `Microclimate temp shift: ${tempDiff.toFixed(1)}°C drift detected.`);
+      }
+    }
+
+    // Check humidity shifts (>15%)
+    const lastHum = parseFloat(latest.field3) || 0;
+    const prevHumVal = parseFloat(previous.field3) || 0;
+    if (prevHumVal > 0) {
+      const humDiff = Math.abs(lastHum - prevHumVal);
+      if (humDiff > 15) {
+        addIncident("Medium", `Microclimate humidity shift: ${humDiff.toFixed(1)}% drift detected.`);
+      }
+    }
+  }
+
+  function addIncident(severity, desc) {
+    const id = incidents.length + 1;
+    const time = new Date().toTimeString().slice(0, 8);
+    incidents.unshift({ id, severity, desc, time });
+    if (incidents.length > 20) incidents.pop();
+    
+    // Update registry list
+    const panel = document.getElementById('incidentLogPanel');
+    if (!panel) return;
+    panel.innerHTML = incidents.map(inc => `
+      <div style="background: rgba(255, 255, 255, 0.015); border: 1px solid rgba(255,255,255,0.03); border-radius: 8px; padding: 10px; font-size: 11px; margin-bottom: 6px;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+          <strong style="color:${inc.severity === 'High' ? 'var(--red)' : 'var(--yellow)'};">[INCIDENT #${inc.id}] Severity: ${inc.severity}</strong>
+          <span style="color:var(--dim2); font-family:var(--mono);">${inc.time}</span>
+        </div>
+         <div style="color:var(--text);">${inc.desc}</div>
+      </div>
+    `).join('');
+  }
+
+  // PDF REPORT GENERATOR (INCORPORATES 14 POINTS)
+  function generatePDFReport() {
+    log("Generating environmental operations PDF report...", "info");
+    
+    let gChartImg = "", tChartImg = "", hChartImg = "";
+    try {
+      gChartImg = document.getElementById('gasChart').toDataURL('image/png');
+      tChartImg = document.getElementById('tempChart').toDataURL('image/png');
+      hChartImg = document.getElementById('humChart').toDataURL('image/png');
+    } catch(e) {
+      console.warn("Could not capture chart snapshots", e);
+    }
+    
+    const ppm = document.getElementById('statusPPM').textContent;
+    const score = calculateAQIScore(parseFloat(ppm) || 0);
+    const risk = document.getElementById('statusWord').textContent;
+    const temp = parseFloat(document.getElementById('tempVal').textContent) || 0;
+    const hum = parseFloat(document.getElementById('humVal').textContent) || 0;
+    const outTemp = document.getElementById('outTemp').textContent;
+    const location = document.getElementById('outCity').textContent;
+    const dateStr = new Date().toLocaleString();
+
+    const comfort = calculateComfortScore(temp, hum);
+    const comfortInfo = getComfortBadge(comfort);
+    const ehi = calculateEHI(parseFloat(ppm)||0, temp, hum, outdoorAQIValue);
+    const ehiInfo = getEHIBadge(ehi);
+    const green = calculateGreenScore(parseFloat(ppm)||0, comfort, ehi);
+    const greenInfo = getGreenBadge(green);
+    
+    const reportHtml = `
+      <html>
+      <head>
+        <title>AirWatch Environmental Intelligence Report</title>
+        <style>
+          body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #fafafa; color: #333; padding: 40px; }
+          .report-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 32px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+          .header { border-bottom: 2px solid #0ea5e9; padding-bottom: 20px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; }
+          .title { font-size: 24px; font-weight: 700; color: #111827; }
+          .date { font-size: 12px; color: #6b7280; font-family: monospace; }
+          .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
+          .metric { background: #f9fafb; border: 1px solid #f3f4f6; border-radius: 8px; padding: 16px; }
+          .label { font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; }
+          .value { font-size: 28px; font-weight: 700; margin-top: 6px; color: #111827; }
+          .sub { font-size: 12px; margin-top: 4px; color: #0ea5e9; font-weight: 600; }
+          .charts-section { margin-top: 30px; }
+          .chart-box { display: inline-block; width: 30%; margin-right: 3%; background: #fff; border: 1px solid #f3f4f6; padding: 10px; border-radius: 8px; box-sizing: border-box; text-align: center; }
+          .chart-box img { max-width: 100%; height: auto; border: 1px solid #eee; margin-top: 8px; }
+          .footer { text-align: center; font-size: 11px; color: #9ca3af; margin-top: 40px; border-top: 1px solid #e5e7eb; padding-top: 16px; }
+          .print-btn { background: #0ea5e9; border: none; color: #fff; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; display: block; margin: 0 auto 20px; }
+          @media print { .print-btn { display: none; } body { padding: 0; } .report-card { border: none; box-shadow: none; } }
+        </style>
+      </head>
+      <body>
+        <button class="print-btn" onclick="window.print()">PRINT REPORT / SAVE AS PDF</button>
+        <div class="report-card">
+          <div class="header">
+            <div>
+              <div class="title">ENVIRONMENTAL INTELLIGENCE AUDIT</div>
+              <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">AirWatch Operations Network</div>
+            </div>
+            <div class="date">${dateStr}</div>
+          </div>
+          <div class="grid">
+            <div class="metric">
+              <div class="label">Environmental Health Index (EHI)</div>
+              <div class="value">${ehi}/100</div>
+              <div class="sub">${ehiInfo.text} Classification</div>
+            </div>
+            <div class="metric">
+              <div class="label">Comfort Score</div>
+              <div class="value">${comfort}/100</div>
+              <div class="sub">${comfortInfo.text} Classification</div>
+            </div>
+            <div class="metric">
+              <div class="label">Green Sustainability Score</div>
+              <div class="value">${green}/100</div>
+              <div class="sub">${greenInfo.text} Classification</div>
+            </div>
+          </div>
+          <div class="grid">
+            <div class="metric">
+              <div class="label">Air Quality Reading</div>
+              <div class="value">${ppm} PPM</div>
+              <div class="sub">AQI Score: ${score}/100 (${risk})</div>
+            </div>
+            <div class="metric">
+              <div class="label">Microclimate Temperature</div>
+              <div class="value">${temp.toFixed(1)}°C</div>
+              <div class="sub">Sensor DHT11</div>
+            </div>
+            <div class="metric">
+              <div class="label">Relative Humidity</div>
+              <div class="value">${hum.toFixed(1)}%</div>
+              <div class="sub">Sensor DHT11</div>
+            </div>
+          </div>
+          <div class="grid" style="grid-template-columns: 1fr; margin-bottom: 30px;">
+            <div class="metric" style="background:#fffcf0; border-color:#faecc8;">
+              <div class="label" style="color:#b25e00;">Suggested Action Advisory</div>
+              <div style="font-size:13.5px; line-height:1.5; color:#783f04; margin-top:8px;">
+                ${getSmartRecommendation(parseFloat(ppm)||0, temp, hum, outdoorAQIValue)}
+              </div>
+            </div>
+          </div>
+          <div class="charts-section">
+            <h3 style="font-size:14px; margin-bottom:12px; color:#4b5563; text-transform:uppercase;">Trend Analysis Charts</h3>
+            <div class="chart-box">
+              <div class="label" style="font-size:9px;">Gas levels (MQ-2)</div>
+              ${gChartImg ? `<img src="${gChartImg}">` : `<div style='height:100px; line-height:100px; background:#fafafa; font-size:10px; color:#9ca3af;'>No snapshot</div>`}
+            </div>
+            <div class="chart-box">
+              <div class="label" style="font-size:9px;">Temperature (DHT11)</div>
+              ${tChartImg ? `<img src="${tChartImg}">` : `<div style='height:100px; line-height:100px; background:#fafafa; font-size:10px; color:#9ca3af;'>No snapshot</div>`}
+            </div>
+            <div class="chart-box">
+              <div class="label" style="font-size:9px;">Humidity (DHT11)</div>
+              ${hChartImg ? `<img src="${hChartImg}">` : `<div style='height:100px; line-height:100px; background:#fafafa; font-size:10px; color:#9ca3af;'>No snapshot</div>`}
+            </div>
+          </div>
+          <div class="footer">
+            Dayananda Sagar College of Engineering · ESP32 System Audit Node · Operational Report
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+    
+    const popup = window.open("", "_blank");
+    if (popup) {
+      popup.document.write(reportHtml);
+      popup.document.close();
+    } else {
+      alert("Popup blocker prevented report generation. Please allow popups for this site.");
+    }
   }
 
   // FETCH THINGSPEAK (dashboard - 8 readings)
@@ -1615,6 +2290,12 @@ const CITY = CONFIG.CITY;
       const hum = parseFloat(lat.field3)||0;
       indoor = { gas, temp, hum };
 
+      // Data Quality Monitoring
+      monitorDataQuality(gas, temp, hum);
+
+      // Incident Detection Engine
+      detectIncidents(gas, temp, hum, feeds);
+
       document.getElementById('gasVal').textContent = gas.toFixed(0);
       document.getElementById('tempVal').textContent = temp.toFixed(1);
       document.getElementById('humVal').textContent = hum.toFixed(1);
@@ -1626,20 +2307,83 @@ const CITY = CONFIG.CITY;
       document.getElementById('statusPPM').textContent = gas.toFixed(0);
       document.getElementById('footerChannel').textContent = `CH ${THINGSPEAK_CHANNEL_ID} · THINGSPEAK`;
 
+      // Score Engine (EHI & Comfort & Green score)
+      const ehi = calculateEHI(gas, temp, hum, outdoorAQIValue);
+      const ehiInfo = getEHIBadge(ehi);
+      document.getElementById('ehiVal').textContent = `${ehi}/100`;
+      updateSensorHealth('ehiBadge', ehiInfo.class, ehiInfo.text.toUpperCase());
+
+      const comfort = calculateComfortScore(temp, hum);
+      const comfortInfo = getComfortBadge(comfort);
+      document.getElementById('comfortVal').textContent = `${comfort}/100`;
+      updateSensorHealth('comfortBadge', comfortInfo.class, comfortInfo.text.toUpperCase());
+
+      const green = calculateGreenScore(gas, comfort, ehi);
+      const greenInfo = getGreenBadge(green);
+      document.getElementById('greenVal').textContent = `${green}/100`;
+      updateSensorHealth('greenBadge', greenInfo.class, greenInfo.text.toUpperCase());
+
+      // Risk Prediction Engine
+      const riskPredict = predictAirQuality(feeds);
+      document.getElementById('predictStatus').textContent = riskPredict.status;
+      document.getElementById('predictStatus').style.color = (riskPredict.status === 'HAZARDOUS' || riskPredict.status === 'POOR') ? 'var(--red)' : 'var(--green)';
+      document.getElementById('predictConf').textContent = `${riskPredict.confidence}%`;
+
+      // Smart Recommendation Engine & Custom AQI
       const info = aqiInfo(gas);
+      const smartRec = getSmartRecommendation(gas, temp, hum, outdoorAQIValue);
       document.getElementById('statusWord').textContent = info.word;
       document.getElementById('statusWord').style.color = info.color;
-      document.getElementById('statusAdvisory').textContent = info.advisory;
+
+      // Smart Assistance Insights Compare
+      let deltaInsight = "";
+      if (prevGas !== null) {
+        const deltaPct = ((gas - prevGas) / (prevGas || 1)) * 100;
+        deltaInsight = ` | Air quality changed by ${deltaPct > 0 ? '+' : ''}${deltaPct.toFixed(0)}% compared to baseline.`;
+      }
+      document.getElementById('statusAdvisory').textContent = smartRec + " (" + info.advisory + ")" + deltaInsight;
+      
       document.getElementById('lastUpdate').textContent = new Date().toTimeString().slice(0,8);
       document.getElementById('statusDot').style.background = 'var(--green)';
       document.getElementById('statusText').textContent = 'LIVE';
       document.getElementById('statusText').style.color = 'var(--green)';
 
-      log(`Uplink received — Gas: ${gas.toFixed(0)}ppm | Temp: ${temp.toFixed(1)}°C | Hum: ${hum.toFixed(1)}% | Status: ${info.word}`, info.word==='CLEAN'?'ok':info.word==='DANGER'?'error':'warn');
+      // Hazard Alerts sound & banner
+      const banner = document.getElementById('hazardAlertBanner');
+      if (gas >= 500) {
+        banner.style.display = 'flex';
+        document.getElementById('hazardAlertText').textContent = `Gas level is elevated (${gas.toFixed(0)} PPM)! Please ventilate the area immediately.`;
+        playWarningBeep();
+        if (gas >= 1000) {
+          log(`[CRITICAL HAZARD] Gas level exceeds safe threshold: ${gas.toFixed(0)} PPM!`, "error");
+        } else {
+          log(`[HAZARD WARNING] Gas level is elevated: ${gas.toFixed(0)} PPM!`, "warn");
+        }
+      } else {
+        banner.style.display = 'none';
+      }
+
+      // Sensor health check badges
+      const mqStatus = (gas <= 0) ? 'health-err' : 'health-ok';
+      const mqText = (gas <= 0) ? 'OFFLINE' : 'NOMINAL';
+      updateSensorHealth('healthMQ2', mqStatus, mqText);
+
+      const dhtStatus = (temp <= 0 && hum <= 0) ? 'health-err' : 'health-ok';
+      const dhtText = (temp <= 0 && hum <= 0) ? 'OFFLINE' : 'NOMINAL';
+      updateSensorHealth('healthDHT11', dhtStatus, dhtText);
+
+      updateSensorHealth('healthTS', 'health-ok', 'NOMINAL');
+      lastTSFetchSuccessTime = Date.now();
+
+      log(`Uplink received — Gas: ${gas.toFixed(0)}ppm | Temp: ${temp.toFixed(1)}°C | Hum: ${hum.toFixed(1)}% | EHI: ${ehi}/100`, ehiInfo.class === 'health-ok' ? 'ok' : ehiInfo.class === 'health-err' ? 'error' : 'warn');
     } catch(e) {
       log('ThingSpeak uplink failed: '+e.message, 'error');
       document.getElementById('statusText').textContent = 'ERROR';
       document.getElementById('statusText').style.color = 'var(--red)';
+      
+      updateSensorHealth('healthTS', 'health-err', 'FAILED');
+      updateSensorHealth('healthMQ2', 'health-warn', 'UNKNOWN');
+      updateSensorHealth('healthDHT11', 'health-warn', 'UNKNOWN');
     }
   }
 
@@ -1671,20 +2415,29 @@ const CITY = CONFIG.CITY;
         tEl.className = td>3?'diff-worse':td<-3?'diff-better':'diff-same';
         hEl.textContent = (hd>0?'+':'')+hd+'% vs out';
         hEl.className = hd>10?'diff-worse':'diff-better';
+
+        // Cognitive Insight Delta Log
+        log(`Indoor temp is ${Math.abs(td)}°C ${td > 0 ? 'higher' : 'lower'} than outdoor climate.`, "info");
       }
 
       const lat = d.coord.lat, lon = d.coord.lon;
       const ar = await fetch(`https://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${OPENWEATHER_API_KEY}`);
       const ad = await ar.json();
       const aqi = ad.list[0].main.aqi;
+      outdoorAQIValue = aqi; // Sync EHI calculation reference input
+      
       document.getElementById('outAQI').textContent = aqi;
       document.getElementById('outAQILabel').textContent = aqiLabel(aqi);
       const aqiColors = ['--','var(--green)','var(--green2)','var(--yellow)','var(--amber2)','var(--red)'];
       document.getElementById('outAQI').style.color = aqiColors[aqi]||'var(--tan)';
 
-      log(`Weather uplink — ${d.name}: ${outTemp}°C, ${desc}, wind ${wind}m/s, AQI ${aqiLabel(aqi)}`, 'ok');
+      updateSensorHealth('healthOW', 'health-ok', 'NOMINAL');
+      lastOWFetchSuccessTime = Date.now();
+
+      log(`Weather sync completed — ${d.name} Air Quality Index: ${aqiLabel(aqi)}`, 'ok');
     } catch(e) {
       log('Weather uplink failed: '+e.message, 'error');
+      updateSensorHealth('healthOW', 'health-err', 'FAILED');
     }
   }
 
@@ -1707,10 +2460,74 @@ const CITY = CONFIG.CITY;
       // Stats
       const avg = arr => (arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(1);
       const max = arr => Math.max(...arr).toFixed(0);
+      const min = arr => Math.min(...arr).toFixed(0);
+      
       document.getElementById('avgGas').textContent = avg(gasData);
       document.getElementById('avgTemp').textContent = avg(tempData);
       document.getElementById('avgHum').textContent = avg(humData);
       document.getElementById('peakGas').textContent = max(gasData);
+      
+      // Secondary Analytics Row variables
+      document.getElementById('minGas').textContent = min(gasData);
+      document.getElementById('minTemp').textContent = min(tempData);
+      document.getElementById('minHum').textContent = min(humData);
+
+      // Historical Data Quality Calculation
+      let qualityErrors = 0;
+      for (let i = 1; i < gasData.length; i++) {
+        if (Math.abs(gasData[i] - gasData[i-1]) > 300) qualityErrors++;
+        if (Math.abs(tempData[i] - tempData[i-1]) > 5) qualityErrors++;
+        if (Math.abs(humData[i] - humData[i-1]) > 20) qualityErrors++;
+        if (gasData[i] === gasData[i-1] && tempData[i] === tempData[i-1]) qualityErrors += 0.2;
+      }
+      const histQuality = Math.max(0, 100 - Math.round(qualityErrors * 6));
+      document.getElementById('histDataQuality').textContent = `${histQuality}/100`;
+
+      // Calculations and Trend percentage deltas
+      function getTrendDetails(dataArray, label) {
+        if (dataArray.length < 10) return { text: `${label} stable`, class: 'trend-stable' };
+        const mid = Math.floor(dataArray.length / 2);
+        const firstHalf = dataArray.slice(0, mid);
+        const secondHalf = dataArray.slice(mid);
+        const avgFirst = firstHalf.reduce((a,b)=>a+b, 0) / firstHalf.length;
+        const avgSecond = secondHalf.reduce((a,b)=>a+b, 0) / secondHalf.length;
+        const percentChange = avgFirst > 0 ? ((avgSecond - avgFirst) / avgFirst) * 100 : 0;
+        
+        let direction = "";
+        let colorClass = "trend-stable";
+        let word = "Stable";
+        
+        if (percentChange > 1) {
+          direction = "▲";
+          colorClass = "trend-up";
+          word = "Rising";
+        } else if (percentChange < -1) {
+          direction = "▼";
+          colorClass = "trend-down";
+          word = "Falling";
+        }
+        
+        return {
+          text: `${direction} ${word} (${percentChange > 0 ? '+' : ''}${percentChange.toFixed(1)}% vs start)`,
+          class: colorClass
+        };
+      }
+
+      const gasTrend = getTrendDetails(gasData, "Gas");
+      const tempTrend = getTrendDetails(tempData, "Temp");
+      const humTrend = getTrendDetails(humData, "Humidity");
+      
+      const cards = document.querySelectorAll('#histStats .stat-card');
+      if (cards.length >= 4) {
+        cards[0].querySelector('.stat-sub').innerHTML = `<div class="trend-badge ${gasTrend.class}">${gasTrend.text}</div>`;
+        cards[1].querySelector('.stat-sub').innerHTML = `<div class="trend-badge ${tempTrend.class}">${tempTrend.text}</div>`;
+        cards[2].querySelector('.stat-sub').innerHTML = `<div class="trend-badge ${humTrend.class}">${humTrend.text}</div>`;
+        
+        const peakVal = parseFloat(max(gasData)) || 0;
+        const avgVal = parseFloat(avg(gasData)) || 0;
+        const peakDiff = avgVal > 0 ? ((peakVal - avgVal) / avgVal) * 100 : 0;
+        cards[3].querySelector('.stat-sub').innerHTML = `<div class="trend-badge trend-stable">+${peakDiff.toFixed(0)}% above mean</div>`;
+      }
 
       // Init history charts if not done
       if (!histGasChart) {
@@ -1743,6 +2560,20 @@ const CITY = CONFIG.CITY;
       log('History fetch failed: '+e.message, 'error');
     }
   }
+
+  // Background monitor for staleness (runs every 5 seconds)
+  setInterval(() => {
+    const now = Date.now();
+    if (lastTSFetchSuccessTime > 0 && (now - lastTSFetchSuccessTime) > 60000) {
+      updateSensorHealth('healthTS', 'health-warn', 'STALE');
+      updateSensorHealth('healthMQ2', 'health-warn', 'STALE');
+      updateSensorHealth('healthDHT11', 'health-warn', 'STALE');
+      log("ThingSpeak telemetry link gone stale (no payload >60s).", "warn");
+    }
+    if (lastOWFetchSuccessTime > 0 && (now - lastOWFetchSuccessTime) > 120000) {
+      updateSensorHealth('healthOW', 'health-warn', 'STALE');
+    }
+  }, 5000);
 
   // INIT
   log('AirWatch system initialising...', 'info');
