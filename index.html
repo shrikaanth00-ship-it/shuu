@@ -2800,6 +2800,7 @@ const CITY = CONFIG.CITY;
 
       // Score Engine (EHI & Comfort & Green score)
       const ehi = calculateEHI(gas, temp, hum, outdoorAQIValue);
+      const ehiInfo = getEHIBadge(ehi);
       const comfort = calculateComfortScore(temp, hum);
       const green = calculateGreenScore(gas, comfort, ehi);
 
