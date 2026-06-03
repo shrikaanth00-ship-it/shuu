@@ -1276,6 +1276,16 @@
         <span>Hazard Alarm:</span>
         <button id="alertAudioToggle" onclick="toggleAlertAudio()" class="btn-mute">ACTIVE</button>
       </div>
+      <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.04); font-size: 10px; color: var(--dim); display: flex; flex-direction: column; gap: 4px;">
+        <div style="display:flex; justify-content:space-between;">
+          <span>Link Freshness:</span>
+          <span id="freshnessTime" style="font-family: var(--mono); color: #fff;">--s ago</span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span>Uptime Estimate:</span>
+          <span id="uptimeEstimate" style="font-family: var(--mono); color: #fff;">100.0%</span>
+        </div>
+      </div>
     </div>
     <div class="clock" id="clock" style="margin-top:8px;">--:--:--</div>
   </div>
@@ -1294,6 +1304,11 @@
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Export Report
       </button>
+      <div class="system-status-badge" style="display:flex; align-items:center; gap:8px;">
+        <span style="font-size: 9px; color: var(--dim); font-weight: 600; text-transform: uppercase;">Readiness:</span>
+        <span id="readinessHeaderVal" style="font-family: var(--serif); font-weight: 700; color: #fff;">--</span>
+        <span id="readinessHeaderBadge" class="sensor-health-badge health-ok" style="font-size: 8px; padding: 2px 4px; display: inline-block;">SCANNING</span>
+      </div>
       <div class="system-status-badge">
         <div class="indicator-ring"></div>
         <span id="footerChannel">CH ------ · THINGSPEAK</span>
@@ -1480,24 +1495,50 @@
       <!-- INTELLIGENCE INDEX METRICS -->
       <div class="panel">
         <div class="panel-label">Environmental Health & Sustainability Indices</div>
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 10px;">
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 10px;">
+          <!-- READINESS CARD -->
+          <div style="background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.03); border-radius: 12px; padding: 12px; text-align: center;">
+            <div style="font-size: 9px; color: var(--dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Readiness Score</div>
+            <svg width="60" height="60" viewBox="0 0 36 36" style="margin: 0 auto 8px; display: block;">
+              <path style="stroke: rgba(255,255,255,0.03); stroke-width: 3.5; fill: none;" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              <path id="readinessRing" style="stroke: var(--green); stroke-width: 3.5; stroke-linecap: round; fill: none; transition: stroke-dasharray 0.3s ease; stroke-dasharray: 0, 100;" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              <text x="18" y="21.5" style="fill: #fff; font-family: var(--serif); font-size: 9px; font-weight: 700; text-anchor: middle;" id="readinessRingText">--</text>
+            </svg>
+            <div id="readinessVal" style="font-family: var(--serif); font-size: 11px; font-weight: 600; color: #fff; display: none;">--/100</div>
+            <span id="readinessBadge" class="sensor-health-badge health-ok" style="display: inline-block;">SCANNING</span>
+          </div>
           <!-- EHI CARD -->
           <div style="background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.03); border-radius: 12px; padding: 12px; text-align: center;">
-            <div style="font-size: 9px; color: var(--dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Health Index (EHI)</div>
-            <div id="ehiVal" style="font-family: var(--serif); font-size: 24px; font-weight: 700; color: #fff; margin-top: 8px;">--/100</div>
-            <span id="ehiBadge" class="sensor-health-badge health-ok" style="margin-top: 6px; display: inline-block;">SCANNING</span>
+            <div style="font-size: 9px; color: var(--dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Health Index (EHI)</div>
+            <svg width="60" height="60" viewBox="0 0 36 36" style="margin: 0 auto 8px; display: block;">
+              <path style="stroke: rgba(255,255,255,0.03); stroke-width: 3.5; fill: none;" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              <path id="ehiRing" style="stroke: var(--green); stroke-width: 3.5; stroke-linecap: round; fill: none; transition: stroke-dasharray 0.3s ease; stroke-dasharray: 0, 100;" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              <text x="18" y="21.5" style="fill: #fff; font-family: var(--serif); font-size: 9px; font-weight: 700; text-anchor: middle;" id="ehiRingText">--</text>
+            </svg>
+            <div id="ehiVal" style="font-family: var(--serif); font-size: 11px; font-weight: 600; color: #fff; display: none;">--/100</div>
+            <span id="ehiBadge" class="sensor-health-badge health-ok" style="display: inline-block;">SCANNING</span>
           </div>
           <!-- COMFORT CARD -->
           <div style="background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.03); border-radius: 12px; padding: 12px; text-align: center;">
-            <div style="font-size: 9px; color: var(--dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Comfort Score</div>
-            <div id="comfortVal" style="font-family: var(--serif); font-size: 24px; font-weight: 700; color: #fff; margin-top: 8px;">--/100</div>
-            <span id="comfortBadge" class="sensor-health-badge health-ok" style="margin-top: 6px; display: inline-block;">SCANNING</span>
+            <div style="font-size: 9px; color: var(--dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Comfort Score</div>
+            <svg width="60" height="60" viewBox="0 0 36 36" style="margin: 0 auto 8px; display: block;">
+              <path style="stroke: rgba(255,255,255,0.03); stroke-width: 3.5; fill: none;" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              <path id="comfortRing" style="stroke: var(--green); stroke-width: 3.5; stroke-linecap: round; fill: none; transition: stroke-dasharray 0.3s ease; stroke-dasharray: 0, 100;" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              <text x="18" y="21.5" style="fill: #fff; font-family: var(--serif); font-size: 9px; font-weight: 700; text-anchor: middle;" id="comfortRingText">--</text>
+            </svg>
+            <div id="comfortVal" style="font-family: var(--serif); font-size: 11px; font-weight: 600; color: #fff; display: none;">--/100</div>
+            <span id="comfortBadge" class="sensor-health-badge health-ok" style="display: inline-block;">SCANNING</span>
           </div>
           <!-- GREEN SCORE CARD -->
           <div style="background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.03); border-radius: 12px; padding: 12px; text-align: center;">
-            <div style="font-size: 9px; color: var(--dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Green Score</div>
-            <div id="greenVal" style="font-family: var(--serif); font-size: 24px; font-weight: 700; color: #fff; margin-top: 8px;">--/100</div>
-            <span id="greenBadge" class="sensor-health-badge health-ok" style="margin-top: 6px; display: inline-block;">SCANNING</span>
+            <div style="font-size: 9px; color: var(--dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Green Score</div>
+            <svg width="60" height="60" viewBox="0 0 36 36" style="margin: 0 auto 8px; display: block;">
+              <path style="stroke: rgba(255,255,255,0.03); stroke-width: 3.5; fill: none;" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              <path id="greenRing" style="stroke: var(--green); stroke-width: 3.5; stroke-linecap: round; fill: none; transition: stroke-dasharray 0.3s ease; stroke-dasharray: 0, 100;" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              <text x="18" y="21.5" style="fill: #fff; font-family: var(--serif); font-size: 9px; font-weight: 700; text-anchor: middle;" id="greenRingText">--</text>
+            </svg>
+            <div id="greenVal" style="font-family: var(--serif); font-size: 11px; font-weight: 600; color: #fff; display: none;">--/100</div>
+            <span id="greenBadge" class="sensor-health-badge health-ok" style="display: inline-block;">SCANNING</span>
           </div>
         </div>
       </div>
@@ -1507,19 +1548,29 @@
         <div class="panel-label">Risk Prediction & Telemetry Integrity</div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 10px;">
           <!-- RISK PREDICTION -->
-          <div style="background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.03); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between;">
-            <div style="font-size: 9px; color: var(--dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Expected Trend (30m)</div>
+          <div style="background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.03); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; min-height: 94px;">
+            <div style="font-size: 9px; color: var(--dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Expected Trend (30m)</div>
             <div>
-              <div id="predictStatus" style="font-family: var(--serif); font-size: 16px; font-weight: 700; color: #fff;">SCANNING</div>
-              <div style="font-size: 10px; color: var(--dim); margin-top: 4px;">Confidence: <span id="predictConf" style="font-family: var(--mono); color: var(--amber);">--%</span></div>
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div id="predictStatus" style="font-family: var(--serif); font-size: 14px; font-weight: 700; color: #fff;">SCANNING</div>
+                <span id="predictDirection" style="font-size: 11px; font-weight: 700; font-family: var(--mono); color: var(--dim);">●</span>
+              </div>
+              <div style="font-size: 10px; color: var(--dim); margin-top: 2px; display: flex; justify-content: space-between; align-items: baseline;">
+                <span>Conf: <span id="predictConf" style="font-family: var(--mono); color: var(--amber); font-weight: 600;">--</span></span>
+                <span style="font-size: 9px;">Est: <span id="predictEstPPM" style="color: #fff; font-family: var(--mono); font-weight: 600;">--</span> PPM</span>
+              </div>
+              <div style="font-size: 9px; color: var(--dim2); text-align: right; margin-top: 1px;">Rate: <span id="predictGrowthRate" style="font-family: var(--mono);">--</span> PPM/m</div>
             </div>
           </div>
           <!-- DATA QUALITY -->
-          <div style="background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.03); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between;">
-            <div style="font-size: 9px; color: var(--dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Data Integrity Score</div>
+          <div style="background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.03); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; justify-content: space-between; min-height: 94px;">
+            <div style="font-size: 9px; color: var(--dim); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">Data Integrity Score</div>
             <div>
-              <div id="dataQualityVal" style="font-family: var(--serif); font-size: 16px; font-weight: 700; color: #fff;">--/100</div>
-              <div style="font-size: 10px; color: var(--dim); margin-top: 4px;">Telemetry Checksum</div>
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div id="dataQualityVal" style="font-family: var(--serif); font-size: 14px; font-weight: 700; color: #fff;">--/100</div>
+                <span id="dataQualityClass" class="sensor-health-badge health-ok" style="font-size: 8px; padding: 2px 4px;">SCANNING</span>
+              </div>
+              <div id="dataQualityExpl" style="font-size: 9px; color: var(--dim); margin-top: 2px; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 145px;">Initialising data checks...</div>
             </div>
           </div>
         </div>
@@ -1533,8 +1584,16 @@
       <!-- ALERTS & INCIDENT DETECTION RECORD -->
       <div class="panel" style="flex: 1; display: flex; flex-direction: column;">
         <div class="panel-label">Incident Registry & Notifications Log</div>
-        <div id="incidentLogPanel" style="flex: 1; height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 4px; margin-top: 10px;">
+        <!-- Tab selector headers -->
+        <div style="display: flex; gap: 12px; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
+          <button id="tabIncidentsBtn" onclick="setRegistryTab('incidents')" style="background: transparent; border: none; color: #fff; font-weight: 600; cursor: pointer; font-size: 11px; text-transform: uppercase; outline: none; padding: 2px 4px;">Incidents</button>
+          <button id="tabEventsBtn" onclick="setRegistryTab('events')" style="background: transparent; border: none; color: var(--dim); font-weight: 600; cursor: pointer; font-size: 11px; text-transform: uppercase; outline: none; padding: 2px 4px;">Events Feed</button>
+        </div>
+        <div id="incidentLogPanel" style="flex: 1; height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 4px; margin-top: 4px;">
           <div style="font-size: 11px; color: var(--dim2); text-align: center; padding: 20px;">No incidents detected. System nominal.</div>
+        </div>
+        <div id="eventLogPanel" style="flex: 1; height: 160px; overflow-y: auto; display: none; flex-direction: column; gap: 6px; padding-right: 4px; margin-top: 4px;">
+          <div style="font-size: 11px; color: var(--dim2); text-align: center; padding: 20px;">No events recorded.</div>
         </div>
       </div>
 
@@ -1781,6 +1840,12 @@ const CITY = CONFIG.CITY;
   let notifications = [];
   let outdoorAQIValue = 1; // Default to 1 (Excellent)
 
+  // TELEMETRY & ALARM CORE STATE
+  let totalUplinksAttempted = 0;
+  let totalUplinksSuccessful = 0;
+  let currentAlarmState = 'Safe';
+  let alarmIntervalId = null;
+
   // CLOCK
   setInterval(() => {
     document.getElementById('clock').textContent = new Date().toTimeString().slice(0,8);
@@ -1837,15 +1902,16 @@ const CITY = CONFIG.CITY;
     chart.data.labels = labels;
     chart.data.datasets[0].data = data;
     chart.update();
-  }
-
   // INIT CHARTS
   gasChart = makeChart('gasChart', 'rgb(232,192,96)');
   tempChart = makeChart('tempChart', 'rgb(212,168,112)');
   humChart = makeChart('humChart', 'rgb(143,188,90)');
 
-  // AQI SCORE ENGINE
+  // ============================================
+  // EHI ENGINE
+  // ============================================
   function calculateAQIScore(ppm) {
+    if (ppm === null || isNaN(ppm) || ppm === undefined || ppm < 0) return null;
     let score = 0;
     if (ppm <= 200) {
       score = 100 - (ppm / 200) * 20;
@@ -1859,9 +1925,9 @@ const CITY = CONFIG.CITY;
     return Math.round(score);
   }
 
-  // AQI INFO
   function aqiInfo(ppm) {
     const score = calculateAQIScore(ppm);
+    if (score === null) return { word: 'INSUFFICIENT DATA', color: 'var(--dim)', advisory: 'No telemetry available.' };
     if (score >= 90) return { word: 'EXCELLENT', color: 'var(--green)', advisory: 'Air quality is within safe parameters. All readings nominal.' };
     if (score >= 75) return { word: 'GOOD', color: 'var(--green2)', advisory: 'Air quality is good. Indoor atmosphere is healthy.' };
     if (score >= 50) return { word: 'MODERATE', color: 'var(--yellow)', advisory: 'Moderate air quality. Sensitive individuals should monitor conditions closely.' };
@@ -1873,8 +1939,8 @@ const CITY = CONFIG.CITY;
     return ['--','GOOD','FAIR','MODERATE','POOR','VERY POOR'][aqi] || '--';
   }
 
-  // ENVIRONMENTAL HEALTH INDEX (EHI) ENGINE
   function calculateEHI(gas, temp, hum, outAqiIndex) {
+    if (gas === null || temp === null || hum === null || isNaN(gas) || isNaN(temp) || isNaN(hum)) return null;
     const gasScore = calculateAQIScore(gas);
     const tempScore = Math.max(0, 100 - Math.abs(temp - 22.5) * 6.5);
     const humScore = Math.max(0, 100 - Math.abs(hum - 50) * 2.2);
@@ -1885,59 +1951,108 @@ const CITY = CONFIG.CITY;
   }
 
   function getEHIBadge(ehi) {
+    if (ehi === null) return { text: "Insufficient Data", class: "health-err" };
     if (ehi >= 90) return { text: "Excellent", class: "health-ok" };
     if (ehi >= 75) return { text: "Good", class: "health-ok" };
-    if (ehi >= 50) return { text: "Moderate", class: "health-warn" };
-    if (ehi >= 25) return { text: "Poor", class: "health-err" };
+    if (ehi >= 60) return { text: "Moderate", class: "health-warn" };
+    if (ehi >= 40) return { text: "Poor", class: "health-err" };
     return { text: "Hazardous", class: "health-err" };
   }
 
-  // INDOOR COMFORT SCORE ENGINE
+  // ============================================
+  // COMFORT ENGINE
+  // ============================================
   function calculateComfortScore(temp, hum) {
+    if (temp === null || hum === null || isNaN(temp) || isNaN(hum)) return null;
     const tempComfort = Math.max(0, 100 - Math.abs(temp - 22) * 8);
-    const humComfort = Math.max(0, 100 - Math.abs(hum - 45) * 2.2);
+    const humComfort = Math.max(0, 100 - Math.abs(hum - 45) * 2);
     const comfort = (tempComfort * 0.6) + (humComfort * 0.4);
     return Math.round(comfort);
   }
 
   function getComfortBadge(comfort) {
+    if (comfort === null) return { text: "Insufficient Data", class: "health-err" };
     if (comfort >= 90) return { text: "Optimal", class: "health-ok" };
     if (comfort >= 75) return { text: "Comfortable", class: "health-ok" };
     if (comfort >= 50) return { text: "Uncomfortable", class: "health-warn" };
     return { text: "Critical", class: "health-err" };
   }
 
-  // SUSTAINABILITY GREEN SCORE ENGINE
+  // ============================================
+  // GREEN SCORE ENGINE
+  // ============================================
   function calculateGreenScore(gas, comfortScore, ehi) {
+    if (gas === null || comfortScore === null || ehi === null) return null;
     const aqiScore = calculateAQIScore(gas);
+    if (aqiScore === null) return null;
     const green = (aqiScore * 0.5) + (comfortScore * 0.25) + (ehi * 0.25);
     return Math.round(green);
   }
 
   function getGreenBadge(green) {
+    if (green === null) return { text: "Insufficient Data", class: "health-err" };
     if (green >= 85) return { text: "Sustainable", class: "health-ok" };
     if (green >= 60) return { text: "Moderate", class: "health-warn" };
     return { text: "Poor", class: "health-err" };
   }
 
-  // AIR QUALITY RISK PREDICTION
+  // ============================================
+  // READINESS ENGINE
+  // ============================================
+  function getSensorHealthValue(sensorId) {
+    const badge = document.getElementById(sensorId);
+    if (!badge) return 0;
+    return badge.textContent.includes('NOMINAL') || badge.textContent.includes('LIVE') ? 25 : 0;
+  }
+
+  function calculateReadinessScore(ehi, comfort, green, dataQuality) {
+    if (ehi === null || comfort === null || green === null || dataQuality === null) return null;
+    const healthScore = getSensorHealthValue('healthMQ2') + 
+                        getSensorHealthValue('healthDHT11') + 
+                        getSensorHealthValue('healthTS') + 
+                        getSensorHealthValue('healthOW');
+    const readiness = (ehi + comfort + green + healthScore + dataQuality) / 5;
+    return Math.round(readiness);
+  }
+
+  function getReadinessBadge(readiness) {
+    if (readiness === null) return { text: "Insufficient Data", class: "health-err" };
+    if (readiness >= 90) return { text: "Ready", class: "health-ok" };
+    if (readiness >= 75) return { text: "Stable", class: "health-ok" };
+    if (readiness >= 60) return { text: "Warning", class: "health-warn" };
+    return { text: "Critical", class: "health-err" };
+  }
+
+  // ============================================
+  // PREDICTION ENGINE
+  // ============================================
   function predictAirQuality(feeds) {
-    if (feeds.length < 4) return { status: "STABLE", confidence: 75 };
+    if (!feeds || feeds.length < 4) {
+      return { status: "Insufficient Data", confidence: "--", estPPM: "--", rate: "--", direction: "●" };
+    }
     const gasValues = feeds.map(f => parseFloat(f.field1) || 0);
+    const timePoints = feeds.map(f => new Date(f.created_at).getTime());
+    
+    // Calculate average time diff in minutes
+    let timeDiffSum = 0;
+    for (let i = 1; i < feeds.length; i++) {
+      timeDiffSum += (timePoints[i] - timePoints[i - 1]) / 1000 / 60; // in minutes
+    }
+    const avgInterval = timeDiffSum / (feeds.length - 1);
     
     let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
     const n = gasValues.length;
     for (let i = 0; i < n; i++) {
-      sumX += i;
+      const minutesElapsed = i * avgInterval;
+      sumX += minutesElapsed;
       sumY += gasValues[i];
-      sumXY += i * gasValues[i];
-      sumXX += i * i;
+      sumXY += minutesElapsed * gasValues[i];
+      sumXX += minutesElapsed * minutesElapsed;
     }
-    const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
     
-    // Project 30 minutes (12 cycles at 2.5 min sample rate)
+    const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
     const latestGas = gasValues[n - 1];
-    const projectedGas = Math.max(0, latestGas + slope * 12);
+    const projectedGas = Math.max(0, latestGas + slope * 30);
     const projectedScore = calculateAQIScore(projectedGas);
     
     let status = "EXCELLENT";
@@ -1951,13 +2066,31 @@ const CITY = CONFIG.CITY;
       diffSum += Math.abs(gasValues[i] - gasValues[i - 1]);
     }
     const avgDiff = diffSum / (n - 1);
-    const confidence = Math.max(50, Math.min(95, Math.round(92 - avgDiff * 0.1)));
+    const confidencePct = Math.max(50, Math.min(95, Math.round(92 - avgDiff * 0.1)));
     
-    return { status, confidence };
+    let confidenceText = "Medium";
+    if (confidencePct >= 85) confidenceText = "High";
+    else if (confidencePct < 70) confidenceText = "Low";
+
+    let direction = "●";
+    if (slope > 1) direction = "▲";
+    else if (slope < -1) direction = "▼";
+    
+    return {
+      status,
+      confidence: confidenceText,
+      estPPM: Math.round(projectedGas),
+      rate: slope.toFixed(1),
+      direction
+    };
   }
 
-  // SMART RECOMMENDATIONS ENGINE
+  // ============================================
+  // RECOMMENDATION ENGINE
+  // ============================================
   function getSmartRecommendation(gas, temp, hum, outdoorAqi) {
+    if (gas === null || temp === null || hum === null) return "System loading: waiting for telemetry signals.";
+    
     let recs = [];
     const score = calculateAQIScore(gas);
     const comfort = calculateComfortScore(temp, hum);
@@ -1977,66 +2110,110 @@ const CITY = CONFIG.CITY;
     } else if (comfort < 75) {
       recs.push("Thermal environment is suboptimal.");
     } else {
-      recs.push("Indoor climate is stable and comfortable.");
+      recs.push("Indoor climate is comfortable.");
     }
 
     if (temp > 28) {
-      recs.push("Humidity is approaching threshold; use climate control.");
+      recs.push("High temperature detected; use climate control.");
+    }
+    if (hum > 70) {
+      recs.push("High humidity; run dehumidifier.");
+    } else if (hum < 30) {
+      recs.push("Dry environment; activate humidifier.");
     }
 
     return recs.join(" | ");
   }
 
-  // SENSOR HEALTH STATUS UPDATER
-  function updateSensorHealth(sensorId, statusClass, statusText) {
-    const badge = document.getElementById(sensorId);
-    if (!badge) return;
-    badge.className = `sensor-health-badge ${statusClass}`;
-    badge.textContent = statusText;
-  }
-
-  // DATA QUALITY MONITOR
-  function monitorDataQuality(gas, temp, hum) {
-    let anomalies = 0;
-    if (gas === 0 && temp === 0 && hum === 0) {
-      log("[DATA QUALITY] Blank payload block detected (missing sensor inputs)!", "error");
-      anomalies += 3;
+  // ============================================
+  // ALERT ENGINE
+  // ============================================
+  function setAlarmSoundLoop(state) {
+    currentAlarmState = state;
+    const statusBtn = document.getElementById('alertAudioToggle');
+    
+    // Clear any existing loop
+    if (alarmIntervalId) {
+      clearInterval(alarmIntervalId);
+      alarmIntervalId = null;
     }
-    if (prevGas !== null) {
-      const gasDiff = Math.abs(gas - prevGas);
-      if (gasDiff > 300) {
-        log(`[DATA QUALITY] Gas sensor spike detected: abrupt jump of ${gasDiff.toFixed(0)} PPM!`, "warn");
-        anomalies++;
+    
+    if (alarmMuted) {
+      if (statusBtn) {
+        statusBtn.textContent = "MUTED";
+        statusBtn.className = "btn-mute active";
       }
-      if (gas === prevGas) {
-        // Repeated identical readings could indicate frozen sensor
-        anomalies += 0.5;
-      }
+      return;
     }
-    if (prevTemp !== null) {
-      const tempDiff = Math.abs(temp - prevTemp);
-      if (tempDiff > 5) {
-        log(`[DATA QUALITY] Temperature drift detected: sudden change of ${tempDiff.toFixed(1)}°C!`, "warn");
-        anomalies++;
-      }
-    }
-    if (prevHum !== null) {
-      const humDiff = Math.abs(hum - prevHum);
-      if (humDiff > 20) {
-        log(`[DATA QUALITY] Humidity drift detected: sudden shift of ${humDiff.toFixed(1)}%!`, "warn");
-        anomalies++;
+    
+    if (statusBtn) {
+      if (state === 'Safe') {
+        statusBtn.textContent = "ACTIVE (SAFE)";
+        statusBtn.className = "btn-mute";
+      } else {
+        statusBtn.textContent = `ACTIVE (${state.toUpperCase()}!)`;
+        statusBtn.className = "btn-mute warning-flash";
       }
     }
     
-    prevGas = gas;
-    prevTemp = temp;
-    prevHum = hum;
-
-    const dataScore = Math.max(0, 100 - Math.round(anomalies * 15));
-    document.getElementById('dataQualityVal').textContent = `${dataScore}/100`;
+    if (state === 'Safe') {
+      return;
+    }
+    
+    // Set beep parameters depending on alarm state severity
+    let freq = 600;
+    let duration = 150;
+    let gainVal = 0.03;
+    let interval = 4000;
+    
+    if (state === 'Warning') {
+      freq = 600;
+      duration = 150;
+      gainVal = 0.03;
+      interval = 4000;
+    } else if (state === 'Danger') {
+      freq = 800;
+      duration = 200;
+      gainVal = 0.08;
+      interval = 1500;
+    } else if (state === 'Critical') {
+      freq = 1000;
+      duration = 250;
+      gainVal = 0.15;
+      interval = 600;
+    }
+    
+    alarmIntervalId = setInterval(() => {
+      playSynthesizedBeep(freq, duration, gainVal);
+    }, interval);
   }
 
-  // WARNING AUDIO ALARM SYNTH
+  function playSynthesizedBeep(freq, duration, gainVal) {
+    if (alarmMuted) return;
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+      const osc = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      
+      osc.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime);
+      gainNode.gain.setValueAtTime(gainVal, ctx.currentTime);
+      
+      // Smooth exponential volume drop to prevent speaker crackles
+      gainNode.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + duration / 1000);
+      
+      osc.start();
+      osc.stop(ctx.currentTime + duration / 1000);
+    } catch(e) {
+      console.warn("Audio Context playback failed or was blocked", e);
+    }
+  }
+
   function toggleAlertAudio() {
     alarmMuted = !alarmMuted;
     const btn = document.getElementById('alertAudioToggle');
@@ -2049,24 +2226,7 @@ const CITY = CONFIG.CITY;
       btn.classList.remove('active');
       log("Hazard audio alarm activated.", "ok");
     }
-  }
-
-  function playWarningBeep() {
-    if (alarmMuted) return;
-    try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(880, ctx.currentTime);
-      gain.gain.setValueAtTime(0.15, ctx.currentTime);
-      osc.start();
-      osc.stop(ctx.currentTime + 0.35);
-    } catch(e) {
-      console.warn("Audio Context playback failed", e);
-    }
+    setAlarmSoundLoop(currentAlarmState);
   }
 
   function dismissHazardAlert() {
@@ -2074,39 +2234,48 @@ const CITY = CONFIG.CITY;
     log("Hazard warning banner dismissed by operator.", "info");
   }
 
-  // INCIDENT DETECTION LOGIC
+  // ============================================
+  // INCIDENT ENGINE & LOGGER HELPERS
+  // ============================================
   function detectIncidents(gas, temp, hum, feeds) {
-    if (feeds.length < 2) return;
+    if (!feeds || feeds.length < 2) return;
+    
+    // 1. Outages check
+    if (gas <= 0) {
+      addIncident("High", "Sensor Outage: MQ-2 Gas sensor reading is zero/invalid!");
+    }
+    if (temp <= 0 && hum <= 0) {
+      addIncident("High", "Sensor Outage: DHT11 temperature/humidity sensor is offline!");
+    }
+    
+    // 2. Surges check
     const latest = feeds[feeds.length - 1];
     const previous = feeds[feeds.length - 2];
     const lastGas = parseFloat(latest.field1) || 0;
     const prevGasVal = parseFloat(previous.field1) || 0;
     
-    // Check sudden gas spike (>35% in last interval)
     if (prevGasVal > 0) {
       const pctChange = ((lastGas - prevGasVal) / prevGasVal) * 100;
       if (pctChange > 35) {
-        addIncident("High", `Gas concentration surged by ${pctChange.toFixed(0)}% in 5 minutes!`);
+        addIncident("High", `Gas concentration surged by ${pctChange.toFixed(0)}% in last interval!`);
       }
     }
     
-    // Check rapid temp shift (>3C)
     const lastTemp = parseFloat(latest.field2) || 0;
     const prevTempVal = parseFloat(previous.field2) || 0;
     if (prevTempVal > 0) {
       const tempDiff = Math.abs(lastTemp - prevTempVal);
       if (tempDiff > 3) {
-        addIncident("Medium", `Microclimate temp shift: ${tempDiff.toFixed(1)}°C drift detected.`);
+        addIncident("Medium", `Microclimate temp drift: abrupt change of ${tempDiff.toFixed(1)}°C detected.`);
       }
     }
 
-    // Check humidity shifts (>15%)
     const lastHum = parseFloat(latest.field3) || 0;
     const prevHumVal = parseFloat(previous.field3) || 0;
     if (prevHumVal > 0) {
       const humDiff = Math.abs(lastHum - prevHumVal);
       if (humDiff > 15) {
-        addIncident("Medium", `Microclimate humidity shift: ${humDiff.toFixed(1)}% drift detected.`);
+        addIncident("Medium", `Microclimate humidity drift: change of ${humDiff.toFixed(1)}% detected.`);
       }
     }
   }
@@ -2120,6 +2289,12 @@ const CITY = CONFIG.CITY;
     // Update registry list
     const panel = document.getElementById('incidentLogPanel');
     if (!panel) return;
+    
+    if (incidents.length === 0) {
+      panel.innerHTML = `<div style="font-size: 11px; color: var(--dim2); text-align: center; padding: 20px;">No incidents detected. System nominal.</div>`;
+      return;
+    }
+    
     panel.innerHTML = incidents.map(inc => `
       <div style="background: rgba(255, 255, 255, 0.015); border: 1px solid rgba(255,255,255,0.03); border-radius: 8px; padding: 10px; font-size: 11px; margin-bottom: 6px;">
         <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
@@ -2131,7 +2306,47 @@ const CITY = CONFIG.CITY;
     `).join('');
   }
 
-  // PDF REPORT GENERATOR (INCORPORATES 14 POINTS)
+  function renderNotifications() {
+    const panel = document.getElementById('eventLogPanel');
+    if (!panel) return;
+    if (notifications.length === 0) {
+      panel.innerHTML = `<div style="font-size: 11px; color: var(--dim2); text-align: center; padding: 20px;">No events recorded.</div>`;
+      return;
+    }
+    panel.innerHTML = notifications.map(notif => `
+      <div style="background: rgba(255, 255, 255, 0.015); border: 1px solid rgba(255,255,255,0.03); border-radius: 8px; padding: 8px 10px; font-size: 11px; margin-bottom: 6px;">
+        <div style="display:flex; justify-content:space-between;">
+          <span style="color:var(--amber); font-weight:600;">[EVENT]</span>
+          <span style="color:var(--dim2); font-family:var(--mono);">${notif.time}</span>
+        </div>
+        <div style="color:var(--text); margin-top:2px;">${notif.message}</div>
+      </div>
+    `).join('');
+  }
+
+  function setRegistryTab(tab) {
+    const incBtn = document.getElementById('tabIncidentsBtn');
+    const evtBtn = document.getElementById('tabEventsBtn');
+    const incPanel = document.getElementById('incidentLogPanel');
+    const evtPanel = document.getElementById('eventLogPanel');
+    
+    if (tab === 'incidents') {
+      incBtn.style.color = '#fff';
+      evtBtn.style.color = 'var(--dim)';
+      incPanel.style.display = 'flex';
+      evtPanel.style.display = 'none';
+    } else {
+      evtBtn.style.color = '#fff';
+      incBtn.style.color = 'var(--dim)';
+      incPanel.style.display = 'none';
+      evtPanel.style.display = 'flex';
+      renderNotifications();
+    }
+  }
+
+  // ============================================
+  // PDF ENGINE
+  // ============================================
   function generatePDFReport() {
     log("Generating environmental operations PDF report...", "info");
     
@@ -2141,118 +2356,215 @@ const CITY = CONFIG.CITY;
       tChartImg = document.getElementById('tempChart').toDataURL('image/png');
       hChartImg = document.getElementById('humChart').toDataURL('image/png');
     } catch(e) {
-      console.warn("Could not capture chart snapshots", e);
+      console.warn("Could not capture chart snapshots for PDF", e);
     }
     
     const ppm = document.getElementById('statusPPM').textContent;
-    const score = calculateAQIScore(parseFloat(ppm) || 0);
+    const score = calculateAQIScore(parseFloat(ppm) || null);
+    const scoreText = score !== null ? `${score}/100` : "Insufficient Data";
     const risk = document.getElementById('statusWord').textContent;
-    const temp = parseFloat(document.getElementById('tempVal').textContent) || 0;
-    const hum = parseFloat(document.getElementById('humVal').textContent) || 0;
+    const tempVal = document.getElementById('tempVal').textContent;
+    const temp = tempVal !== "---" ? parseFloat(tempVal) : null;
+    const humVal = document.getElementById('humVal').textContent;
+    const hum = humVal !== "---" ? parseFloat(humVal) : null;
     const outTemp = document.getElementById('outTemp').textContent;
     const location = document.getElementById('outCity').textContent;
     const dateStr = new Date().toLocaleString();
 
     const comfort = calculateComfortScore(temp, hum);
+    const comfortText = comfort !== null ? `${comfort}/100` : "Insufficient Data";
     const comfortInfo = getComfortBadge(comfort);
-    const ehi = calculateEHI(parseFloat(ppm)||0, temp, hum, outdoorAQIValue);
+    
+    const ehi = calculateEHI(ppm !== "--" ? parseFloat(ppm) : null, temp, hum, outdoorAQIValue);
+    const ehiText = ehi !== null ? `${ehi}/100` : "Insufficient Data";
     const ehiInfo = getEHIBadge(ehi);
-    const green = calculateGreenScore(parseFloat(ppm)||0, comfort, ehi);
+    
+    const green = calculateGreenScore(ppm !== "--" ? parseFloat(ppm) : null, comfort, ehi);
+    const greenText = green !== null ? `${green}/100` : "Insufficient Data";
     const greenInfo = getGreenBadge(green);
+
+    // Calculate Data Quality
+    const dqText = document.getElementById('dataQualityVal').textContent;
+    
+    // Calculate Readiness Score
+    let readyText = "Insufficient Data";
+    let readyInfo = { text: "N/A" };
+    if (ehi !== null && comfort !== null && green !== null) {
+      const parsedDQ = parseInt(dqText) || 100;
+      const readiness = calculateReadinessScore(ehi, comfort, green, parsedDQ);
+      readyText = `${readiness}/100`;
+      readyInfo = getReadinessBadge(readiness);
+    }
+
+    // Format prediction
+    const estPPM = document.getElementById('predictEstPPM').textContent;
+    const predStatus = document.getElementById('predictStatus').textContent;
+    const predConf = document.getElementById('predictConf').textContent;
+    
+    // Format incident list
+    const incidentList = incidents.length > 0 
+      ? incidents.map(inc => `<div style="padding: 6px; border-bottom: 1px solid #eee; font-size: 11px;"><strong>${inc.time} [${inc.severity}]</strong>: ${inc.desc}</div>`).join('')
+      : "<div style='padding: 10px; text-align: center; color: #999; font-size: 11px;'>No incidents registered in this session.</div>";
     
     const reportHtml = `
       <html>
       <head>
         <title>AirWatch Environmental Intelligence Report</title>
         <style>
-          body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #fafafa; color: #333; padding: 40px; }
-          .report-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 32px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-          .header { border-bottom: 2px solid #0ea5e9; padding-bottom: 20px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; }
-          .title { font-size: 24px; font-weight: 700; color: #111827; }
-          .date { font-size: 12px; color: #6b7280; font-family: monospace; }
-          .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
-          .metric { background: #f9fafb; border: 1px solid #f3f4f6; border-radius: 8px; padding: 16px; }
-          .label { font-size: 11px; font-weight: 600; color: #6b7280; text-transform: uppercase; }
-          .value { font-size: 28px; font-weight: 700; margin-top: 6px; color: #111827; }
-          .sub { font-size: 12px; margin-top: 4px; color: #0ea5e9; font-weight: 600; }
-          .charts-section { margin-top: 30px; }
-          .chart-box { display: inline-block; width: 30%; margin-right: 3%; background: #fff; border: 1px solid #f3f4f6; padding: 10px; border-radius: 8px; box-sizing: border-box; text-align: center; }
-          .chart-box img { max-width: 100%; height: auto; border: 1px solid #eee; margin-top: 8px; }
-          .footer { text-align: center; font-size: 11px; color: #9ca3af; margin-top: 40px; border-top: 1px solid #e5e7eb; padding-top: 16px; }
-          .print-btn { background: #0ea5e9; border: none; color: #fff; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; display: block; margin: 0 auto 20px; }
-          @media print { .print-btn { display: none; } body { padding: 0; } .report-card { border: none; box-shadow: none; } }
+          body { font-family: 'Helvetica Neue', Arial, sans-serif; background: #fff; color: #333; padding: 20px; line-height: 1.4; }
+          .report-wrapper { max-width: 800px; margin: 0 auto; }
+          .header { border-bottom: 3px solid #0ea5e9; padding-bottom: 16px; margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; }
+          .title { font-size: 22px; font-weight: 700; color: #111827; letter-spacing: -0.5px; }
+          .branding { font-size: 11px; text-transform: uppercase; color: #0ea5e9; font-weight: 600; }
+          .date { font-size: 11px; color: #6b7280; font-family: monospace; }
+          
+          .section-title { font-size: 12px; font-weight: 700; text-transform: uppercase; color: #0ea5e9; margin-top: 24px; margin-bottom: 12px; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px; }
+          
+          .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+          .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+          .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+          
+          .card { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; }
+          .card-label { font-size: 9px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; }
+          .card-val { font-size: 20px; font-weight: 700; margin-top: 4px; color: #111827; }
+          .card-sub { font-size: 10px; margin-top: 2px; color: #0ea5e9; font-weight: 600; }
+          
+          .charts-container { display: flex; justify-content: space-between; margin-bottom: 20px; }
+          .chart-box { width: 31%; border: 1px solid #e5e7eb; padding: 8px; border-radius: 8px; text-align: center; }
+          .chart-box img { max-width: 100%; height: auto; margin-top: 8px; }
+          .chart-label { font-size: 9px; font-weight: 600; color: #6b7280; text-transform: uppercase; }
+          
+          .recommendation-box { background: #fffbeb; border: 1px solid #fef3c7; padding: 14px; border-radius: 8px; color: #783f04; font-size: 12px; margin-bottom: 20px; }
+          .incident-box { border: 1px solid #e5e7eb; border-radius: 8px; max-height: 180px; overflow-y: auto; background: #fafafa; }
+          
+          .footer { text-align: center; font-size: 10px; color: #9ca3af; margin-top: 40px; border-top: 1px solid #e5e7eb; padding-top: 12px; }
+          .print-btn { background: #0ea5e9; border: none; color: #fff; padding: 10px 24px; border-radius: 6px; font-weight: 600; cursor: pointer; display: block; margin: 0 auto 20px; }
+          
+          /* PAGE BREAKS FOR MULTI-PAGE PRINTING */
+          .page-break { page-break-before: always; }
+          
+          @media print { 
+            .print-btn { display: none; } 
+            body { padding: 0; } 
+            .report-card { border: none; box-shadow: none; }
+          }
         </style>
       </head>
       <body>
-        <button class="print-btn" onclick="window.print()">PRINT REPORT / SAVE AS PDF</button>
-        <div class="report-card">
+        <button class="print-btn" onclick="window.print()">PRINT / SAVE AS PDF</button>
+        <div class="report-wrapper">
+          
+          <!-- PAGE 1: EXECUTIVE SNAPSHOT & SCORES -->
           <div class="header">
             <div>
+              <span class="branding">AirWatch · Environmental Intelligence Platform</span>
               <div class="title">ENVIRONMENTAL INTELLIGENCE AUDIT</div>
-              <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">AirWatch Operations Network</div>
             </div>
             <div class="date">${dateStr}</div>
           </div>
-          <div class="grid">
-            <div class="metric">
-              <div class="label">Environmental Health Index (EHI)</div>
-              <div class="value">${ehi}/100</div>
-              <div class="sub">${ehiInfo.text} Classification</div>
+          
+          <div class="recommendation-box">
+            <strong>SMART RECOMMENDATION ADVISORY:</strong><br/>
+            ${getSmartRecommendation(ppm !== "--" ? parseFloat(ppm) : null, temp, hum, outdoorAQIValue)}
+          </div>
+          
+          <div class="section-title">Operations Index Summary</div>
+          <div class="grid-4">
+            <div class="card">
+              <div class="card-label">Readiness Index</div>
+              <div class="card-val">${readyText}</div>
+              <div class="card-sub">${readyInfo.text} Classification</div>
             </div>
-            <div class="metric">
-              <div class="label">Comfort Score</div>
-              <div class="value">${comfort}/100</div>
-              <div class="sub">${comfortInfo.text} Classification</div>
+            <div class="card">
+              <div class="card-label">Health Index (EHI)</div>
+              <div class="card-val">${ehiText}</div>
+              <div class="card-sub">${ehiInfo.text}</div>
             </div>
-            <div class="metric">
-              <div class="label">Green Sustainability Score</div>
-              <div class="value">${green}/100</div>
-              <div class="sub">${greenInfo.text} Classification</div>
+            <div class="card">
+              <div class="card-label">Comfort Score</div>
+              <div class="card-val">${comfortText}</div>
+              <div class="card-sub">${comfortInfo.text}</div>
+            </div>
+            <div class="card">
+              <div class="card-label">Green Score</div>
+              <div class="card-val">${greenText}</div>
+              <div class="card-sub">${greenInfo.text}</div>
             </div>
           </div>
-          <div class="grid">
-            <div class="metric">
-              <div class="label">Air Quality Reading</div>
-              <div class="value">${ppm} PPM</div>
-              <div class="sub">AQI Score: ${score}/100 (${risk})</div>
+          
+          <div class="section-title">Telemetry Sensor Readings</div>
+          <div class="grid-3">
+            <div class="card">
+              <div class="card-label">Gas Level</div>
+              <div class="card-val">${ppm} PPM</div>
+              <div class="card-sub">AQI Score: ${scoreText} (${risk})</div>
             </div>
-            <div class="metric">
-              <div class="label">Microclimate Temperature</div>
-              <div class="value">${temp.toFixed(1)}°C</div>
-              <div class="sub">Sensor DHT11</div>
+            <div class="card">
+              <div class="card-label">Temperature</div>
+              <div class="card-val">${temp !== null ? temp.toFixed(1) : "--"}°C</div>
+              <div class="card-sub">Uplink Nominal</div>
             </div>
-            <div class="metric">
-              <div class="label">Relative Humidity</div>
-              <div class="value">${hum.toFixed(1)}%</div>
-              <div class="sub">Sensor DHT11</div>
-            </div>
-          </div>
-          <div class="grid" style="grid-template-columns: 1fr; margin-bottom: 30px;">
-            <div class="metric" style="background:#fffcf0; border-color:#faecc8;">
-              <div class="label" style="color:#b25e00;">Suggested Action Advisory</div>
-              <div style="font-size:13.5px; line-height:1.5; color:#783f04; margin-top:8px;">
-                ${getSmartRecommendation(parseFloat(ppm)||0, temp, hum, outdoorAQIValue)}
-              </div>
+            <div class="card">
+              <div class="card-label">Humidity</div>
+              <div class="card-val">${hum !== null ? hum.toFixed(1) : "--"}%</div>
+              <div class="card-sub">Uplink Nominal</div>
             </div>
           </div>
-          <div class="charts-section">
-            <h3 style="font-size:14px; margin-bottom:12px; color:#4b5563; text-transform:uppercase;">Trend Analysis Charts</h3>
-            <div class="chart-box">
-              <div class="label" style="font-size:9px;">Gas levels (MQ-2)</div>
-              ${gChartImg ? `<img src="${gChartImg}">` : `<div style='height:100px; line-height:100px; background:#fafafa; font-size:10px; color:#9ca3af;'>No snapshot</div>`}
+
+          <div class="section-title">Telemetry Analytics & Risk Horizons</div>
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-label">30-Minute Risk Prediction</div>
+              <div class="card-val" style="font-size: 14px; margin-top:6px;">Status: <strong>${predStatus}</strong></div>
+              <div style="font-size: 11px; color:#555; margin-top:2px;">Est: ${estPPM} PPM | Confidence: ${predConf}</div>
             </div>
-            <div class="chart-box">
-              <div class="label" style="font-size:9px;">Temperature (DHT11)</div>
-              ${tChartImg ? `<img src="${tChartImg}">` : `<div style='height:100px; line-height:100px; background:#fafafa; font-size:10px; color:#9ca3af;'>No snapshot</div>`}
-            </div>
-            <div class="chart-box">
-              <div class="label" style="font-size:9px;">Humidity (DHT11)</div>
-              ${hChartImg ? `<img src="${hChartImg}">` : `<div style='height:100px; line-height:100px; background:#fafafa; font-size:10px; color:#9ca3af;'>No snapshot</div>`}
+            <div class="card">
+              <div class="card-label">Data Quality Checksum</div>
+              <div class="card-val" style="font-size: 14px; margin-top:6px;">Status: <strong>${dqText}</strong></div>
+              <div style="font-size: 11px; color:#555; margin-top:2px;">Evaluation: ${document.getElementById('dataQualityExpl').textContent}</div>
             </div>
           </div>
+          
           <div class="footer">
-            Dayananda Sagar College of Engineering · ESP32 System Audit Node · Operational Report
+            Dayananda Sagar College of Engineering · ESP32 Audit Node · Page 1
           </div>
+          
+          <!-- PAGE 2: TIME-SERIES CHARTS & INCIDENT LOGS -->
+          <div class="page-break"></div>
+          
+          <div class="header">
+            <div>
+              <span class="branding">AirWatch · Operations Archive</span>
+              <div class="title">TELEMETRY GRAPHICS & AUDIT REGISTRY</div>
+            </div>
+            <div class="date">${dateStr}</div>
+          </div>
+          
+          <div class="section-title">Real-Time Trend Waveforms</div>
+          <div class="charts-container">
+            <div class="chart-box">
+              <div class="chart-label">Gas Waveform</div>
+              ${gChartImg ? `<img src="${gChartImg}">` : `<div style='height:120px; line-height:120px; color:#999; font-size:10px;'>No graph</div>`}
+            </div>
+            <div class="chart-box">
+              <div class="chart-label">Temp Gradient</div>
+              ${tChartImg ? `<img src="${tChartImg}">` : `<div style='height:120px; line-height:120px; color:#999; font-size:10px;'>No graph</div>`}
+            </div>
+            <div class="chart-box">
+              <div class="chart-label">Moisture Curve</div>
+              ${hChartImg ? `<img src="${hChartImg}">` : `<div style='height:120px; line-height:120px; color:#999; font-size:10px;'>No graph</div>`}
+            </div>
+          </div>
+          
+          <div class="section-title">Session Incident History</div>
+          <div class="incident-box">
+            ${incidentList}
+          </div>
+          
+          <div class="footer">
+            Dayananda Sagar College of Engineering · ESP32 Audit Node · Page 2
+          </div>
+          
         </div>
       </body>
       </html>
@@ -2267,13 +2579,161 @@ const CITY = CONFIG.CITY;
     }
   }
 
+  // ============================================
+  // COGNITIVE HELPER BINDERS
+  // ============================================
+  function updateCircularDials(idPrefix, score) {
+    const ring = document.getElementById(idPrefix + 'Ring');
+    const text = document.getElementById(idPrefix + 'RingText');
+    if (!ring || !text) return;
+    
+    if (score === null || isNaN(score) || score === undefined) {
+      text.textContent = "--";
+      ring.style.strokeDasharray = "0, 100";
+      ring.style.stroke = "rgba(255,255,255,0.05)";
+      return;
+    }
+    
+    text.textContent = score;
+    const pct = Math.max(0, Math.min(100, score));
+    ring.style.strokeDasharray = `${pct}, 100`;
+    
+    if (score >= 90) {
+      ring.style.stroke = "var(--green)";
+    } else if (score >= 75) {
+      ring.style.stroke = "var(--green2)";
+    } else if (score >= 60) {
+      ring.style.stroke = "var(--yellow)";
+    } else if (score >= 40) {
+      ring.style.stroke = "var(--amber2)";
+    } else {
+      ring.style.stroke = "var(--red)";
+    }
+  }
+
+  function displayMetric(valId, badgeId, ringPrefix, score, badgeFunc) {
+    const valEl = document.getElementById(valId);
+    const badgeEl = document.getElementById(badgeId);
+    
+    if (score === null || isNaN(score) || score === undefined) {
+      if (valEl) valEl.textContent = "Insufficient Data";
+      if (badgeEl) {
+        badgeEl.className = "sensor-health-badge health-err";
+        badgeEl.textContent = "INSUFFICIENT DATA";
+      }
+      updateCircularDials(ringPrefix, null);
+      return;
+    }
+    
+    if (valEl) valEl.textContent = `${score}/100`;
+    const info = badgeFunc(score);
+    if (badgeEl) {
+      badgeEl.className = `sensor-health-badge ${info.class}`;
+      badgeEl.textContent = info.text.toUpperCase();
+    }
+    updateCircularDials(ringPrefix, score);
+  }
+
+  // ============================================
+  // SENSOR HEALTH STATUS UPDATER
+  // ============================================
+  function updateSensorHealth(sensorId, statusClass, statusText) {
+    const badge = document.getElementById(sensorId);
+    if (!badge) return;
+    badge.className = `sensor-health-badge ${statusClass}`;
+    badge.textContent = statusText;
+  }
+
+  // ============================================
+  // DATA QUALITY MONITOR
+  // ============================================
+  function monitorDataQuality(gas, temp, hum) {
+    let anomalies = [];
+    if (gas === 0 && temp === 0 && hum === 0) {
+      log("[DATA QUALITY] Blank payload block detected (missing sensor inputs)!", "error");
+      anomalies.push("Blank payload");
+    }
+    if (prevGas !== null) {
+      const gasDiff = Math.abs(gas - prevGas);
+      if (gasDiff > 300) {
+        log(`[DATA QUALITY] Gas sensor spike detected: abrupt jump of ${gasDiff.toFixed(0)} PPM!`, "warn");
+        anomalies.push("Gas spike");
+      }
+    }
+    if (prevTemp !== null) {
+      const tempDiff = Math.abs(temp - prevTemp);
+      if (tempDiff > 5) {
+        log(`[DATA QUALITY] Temperature drift detected: sudden change of ${tempDiff.toFixed(1)}°C!`, "warn");
+        anomalies.push("Temp drift");
+      }
+    }
+    if (prevHum !== null) {
+      const humDiff = Math.abs(hum - prevHum);
+      if (humDiff > 20) {
+        log(`[DATA QUALITY] Humidity drift detected: sudden shift of ${humDiff.toFixed(1)}%!`, "warn");
+        anomalies.push("Hum drift");
+      }
+    }
+    
+    prevGas = gas;
+    prevTemp = temp;
+    prevHum = hum;
+
+    const errorsCount = anomalies.length;
+    const dataScore = Math.max(0, 100 - errorsCount * 25);
+    
+    const scoreVal = document.getElementById('dataQualityVal');
+    const scoreClass = document.getElementById('dataQualityClass');
+    const scoreExpl = document.getElementById('dataQualityExpl');
+    
+    if (scoreVal) scoreVal.textContent = `${dataScore}/100`;
+    
+    let classification = "Excellent";
+    let statusClass = "health-ok";
+    if (dataScore >= 95) {
+      classification = "Excellent";
+      statusClass = "health-ok";
+    } else if (dataScore >= 75) {
+      classification = "Good";
+      statusClass = "health-ok";
+    } else if (dataScore >= 50) {
+      classification = "Degraded";
+      statusClass = "health-warn";
+    } else {
+      classification = "Critical";
+      statusClass = "health-err";
+    }
+    
+    if (scoreClass) {
+      scoreClass.className = `sensor-health-badge ${statusClass}`;
+      scoreClass.textContent = classification.toUpperCase();
+    }
+    
+    if (scoreExpl) {
+      if (errorsCount === 0) {
+        scoreExpl.textContent = "All telemetry checksum checks passed.";
+      } else {
+        scoreExpl.textContent = `Anomaly detected: ${anomalies.join(', ')}.`;
+      }
+    }
+  }
+
+  // ============================================
   // FETCH THINGSPEAK (dashboard - 8 readings)
+  // ============================================ 
   async function fetchDashboard() {
+    totalUplinksAttempted++;
     try {
       const r = await fetch(`https://api.thingspeak.com/channels/${THINGSPEAK_CHANNEL_ID}/feeds.json?api_key=${THINGSPEAK_READ_API_KEY}&results=8`);
       const d = await r.json();
       const feeds = d.feeds;
-      if (!feeds?.length) { log('No data received from ThingSpeak', 'warn'); return; }
+      if (!feeds?.length) { 
+        log('No data received from ThingSpeak', 'warn'); 
+        updateSensorHealth('healthTS', 'health-warn', 'NO DATA');
+        return; 
+      }
+
+      totalUplinksSuccessful++;
 
       const labels = feeds.map(f => new Date(f.created_at).toTimeString().slice(0,5));
       const gasData = feeds.map(f => parseFloat(f.field1)||0);
@@ -2309,25 +2769,59 @@ const CITY = CONFIG.CITY;
 
       // Score Engine (EHI & Comfort & Green score)
       const ehi = calculateEHI(gas, temp, hum, outdoorAQIValue);
-      const ehiInfo = getEHIBadge(ehi);
-      document.getElementById('ehiVal').textContent = `${ehi}/100`;
-      updateSensorHealth('ehiBadge', ehiInfo.class, ehiInfo.text.toUpperCase());
-
       const comfort = calculateComfortScore(temp, hum);
-      const comfortInfo = getComfortBadge(comfort);
-      document.getElementById('comfortVal').textContent = `${comfort}/100`;
-      updateSensorHealth('comfortBadge', comfortInfo.class, comfortInfo.text.toUpperCase());
-
       const green = calculateGreenScore(gas, comfort, ehi);
-      const greenInfo = getGreenBadge(green);
-      document.getElementById('greenVal').textContent = `${green}/100`;
-      updateSensorHealth('greenBadge', greenInfo.class, greenInfo.text.toUpperCase());
+
+      // Update circular dials and text badges
+      displayMetric('ehiVal', 'ehiBadge', 'ehi', ehi, getEHIBadge);
+      displayMetric('comfortVal', 'comfortBadge', 'comfort', comfort, getComfortBadge);
+      displayMetric('greenVal', 'greenBadge', 'green', green, getGreenBadge);
+
+      // Readiness Score
+      const dqScoreText = document.getElementById('dataQualityVal').textContent;
+      const dqScoreVal = parseInt(dqScoreText) || 100;
+      const readiness = calculateReadinessScore(ehi, comfort, green, dqScoreVal);
+      displayMetric('readinessVal', 'readinessBadge', 'readiness', readiness, getReadinessBadge);
+
+      // Update header Readiness values
+      const readinessHeaderVal = document.getElementById('readinessHeaderVal');
+      const readinessHeaderBadge = document.getElementById('readinessHeaderBadge');
+      if (readiness !== null) {
+        if (readinessHeaderVal) readinessHeaderVal.textContent = `${readiness}%`;
+        const readinessInfo = getReadinessBadge(readiness);
+        if (readinessHeaderBadge) {
+          readinessHeaderBadge.className = `sensor-health-badge ${readinessInfo.class}`;
+          readinessHeaderBadge.textContent = readinessInfo.text.toUpperCase();
+        }
+      } else {
+        if (readinessHeaderVal) readinessHeaderVal.textContent = "N/A";
+        if (readinessHeaderBadge) {
+          readinessHeaderBadge.className = "sensor-health-badge health-err";
+          readinessHeaderBadge.textContent = "INSUFFICIENT DATA";
+        }
+      }
 
       // Risk Prediction Engine
       const riskPredict = predictAirQuality(feeds);
       document.getElementById('predictStatus').textContent = riskPredict.status;
-      document.getElementById('predictStatus').style.color = (riskPredict.status === 'HAZARDOUS' || riskPredict.status === 'POOR') ? 'var(--red)' : 'var(--green)';
-      document.getElementById('predictConf').textContent = `${riskPredict.confidence}%`;
+      let statusColor = 'var(--green)';
+      if (riskPredict.status === 'HAZARDOUS' || riskPredict.status === 'POOR') {
+        statusColor = 'var(--red)';
+      } else if (riskPredict.status === 'MODERATE') {
+        statusColor = 'var(--yellow)';
+      }
+      document.getElementById('predictStatus').style.color = statusColor;
+      document.getElementById('predictConf').textContent = riskPredict.confidence;
+      document.getElementById('predictEstPPM').textContent = riskPredict.estPPM;
+      document.getElementById('predictGrowthRate').textContent = riskPredict.rate;
+      
+      const dirEl = document.getElementById('predictDirection');
+      if (dirEl) {
+        dirEl.textContent = riskPredict.direction;
+        if (riskPredict.direction === '▲') dirEl.style.color = 'var(--red)';
+        else if (riskPredict.direction === '▼') dirEl.style.color = 'var(--green)';
+        else dirEl.style.color = 'var(--dim)';
+      }
 
       // Smart Recommendation Engine & Custom AQI
       const info = aqiInfo(gas);
@@ -2348,19 +2842,41 @@ const CITY = CONFIG.CITY;
       document.getElementById('statusText').textContent = 'LIVE';
       document.getElementById('statusText').style.color = 'var(--green)';
 
-      // Hazard Alerts sound & banner
+      // Hazard Alerts sound & banner states
+      let alarmState = 'Safe';
+      if (gas >= 1000) {
+        alarmState = 'Critical';
+      } else if (gas >= 500) {
+        alarmState = 'Danger';
+      } else if (gas >= 200) {
+        alarmState = 'Warning';
+      }
+      setAlarmSoundLoop(alarmState);
+
       const banner = document.getElementById('hazardAlertBanner');
-      if (gas >= 500) {
-        banner.style.display = 'flex';
-        document.getElementById('hazardAlertText').textContent = `Gas level is elevated (${gas.toFixed(0)} PPM)! Please ventilate the area immediately.`;
-        playWarningBeep();
+      if (alarmState !== 'Safe') {
+        if (banner) {
+          banner.style.display = 'flex';
+          let bannerBg = 'rgba(245, 158, 11, 0.15)';
+          let bannerBorder = 'var(--yellow)';
+          if (alarmState === 'Danger') {
+            bannerBg = 'rgba(217, 119, 6, 0.15)';
+            bannerBorder = 'var(--amber2)';
+          } else if (alarmState === 'Critical') {
+            bannerBg = 'rgba(239, 68, 68, 0.25)';
+            bannerBorder = 'var(--red)';
+          }
+          banner.style.background = bannerBg;
+          banner.style.borderColor = bannerBorder;
+          document.getElementById('hazardAlertText').textContent = `Gas level is elevated (${gas.toFixed(0)} PPM)! Please ventilate the area immediately.`;
+        }
         if (gas >= 1000) {
           log(`[CRITICAL HAZARD] Gas level exceeds safe threshold: ${gas.toFixed(0)} PPM!`, "error");
         } else {
           log(`[HAZARD WARNING] Gas level is elevated: ${gas.toFixed(0)} PPM!`, "warn");
         }
       } else {
-        banner.style.display = 'none';
+        if (banner) banner.style.display = 'none';
       }
 
       // Sensor health check badges
@@ -2385,6 +2901,11 @@ const CITY = CONFIG.CITY;
       updateSensorHealth('healthMQ2', 'health-warn', 'UNKNOWN');
       updateSensorHealth('healthDHT11', 'health-warn', 'UNKNOWN');
     }
+    
+    // Update system uptime estimate in sidebar
+    const uptimeEst = totalUplinksAttempted > 0 ? ((totalUplinksSuccessful / totalUplinksAttempted) * 100).toFixed(1) : "100.0";
+    const uptimeEl = document.getElementById('uptimeEstimate');
+    if (uptimeEl) uptimeEl.textContent = `${uptimeEst}%`;
   }
 
   // FETCH WEATHER
