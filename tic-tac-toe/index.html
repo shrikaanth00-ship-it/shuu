@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="A premium, modern Tic-Tac-Toe web application featuring Ultimate Mode, customizable synth sound instruments, glowing neon aesthetics, and an unbeatable AI.">
+  <title>Nexus Tic-Tac-Toe | Ultimate Gaming Experience</title>
+  
+  <!-- Preload Font Family -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="theme-nexus">
+  <!-- Animated Loading Screen -->
+  <div id="loader" class="loader-container">
+    <div class="loader-content">
+      <div class="loader-logo">
+        <svg viewBox="0 0 100 100" class="pulsing-logo">
+          <circle cx="50" cy="50" r="40" class="circle-outer"></circle>
+          <path d="M 30,30 L 70,70" class="cross-line-1"></path>
+          <path d="M 70,30 L 30,70" class="cross-line-2"></path>
+        </svg>
+      </div>
+      <h1 class="loader-title">NEXUS</h1>
+      <p class="loader-subtitle">Loading Game Engine...</p>
+    </div>
+  </div>
+
+  <!-- Main App Wrapper -->
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo-area">
+        <span class="logo-icon" aria-hidden="true">🎮</span>
+        <span class="logo-text">NEXUS <span class="accent-text">T3</span></span>
+      </div>
+      <div class="header-controls">
+        <!-- Quick Mute Button -->
+        <button id="mute-toggle" class="icon-btn" aria-label="Mute game sounds" title="Mute/Unmute Sounds">
+          <svg class="speaker-on-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          </svg>
+          <svg class="speaker-off-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <line x1="23" y1="9" x2="17" y2="15"></line>
+            <line x1="17" y1="9" x2="23" y2="15"></line>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Game Card Dashboard -->
+    <main class="game-dashboard glass-panel">
+      <!-- Game Settings -->
+      <section class="game-settings" aria-label="Game Setup">
+        <!-- Row 1: Game Type & Mode Selector -->
+        <div class="settings-row">
+          <div class="setting-group flex-1">
+            <span class="setting-label">Type</span>
+            <div class="toggle-buttons" role="radiogroup" aria-label="Game Type">
+              <button id="type-classic" class="toggle-btn active" role="radio" aria-checked="true" tabindex="0">Classic</button>
+              <button id="type-ultimate" class="toggle-btn" role="radio" aria-checked="false" tabindex="-1">Ultimate</button>
+            </div>
+          </div>
+          
+          <div class="setting-group flex-1">
+            <span class="setting-label">Mode</span>
+            <div class="toggle-buttons" role="radiogroup" aria-label="Game Mode">
+              <button id="mode-pvp" class="toggle-btn active" role="radio" aria-checked="true" tabindex="0">👥 PvP</button>
+              <button id="mode-pvc" class="toggle-btn" role="radio" aria-checked="false" tabindex="-1">🤖 vs AI</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 2: AI Level (Dynamic visibility) -->
+        <div class="settings-row">
+          <div id="difficulty-wrapper" class="setting-group flex-1 hidden">
+            <span class="setting-label">AI Level</span>
+            <div class="toggle-buttons" role="radiogroup" aria-label="AI Difficulty">
+              <button id="diff-easy" class="toggle-btn active" role="radio" aria-checked="true" tabindex="0">Easy</button>
+              <button id="diff-hard" class="toggle-btn" role="radio" aria-checked="false" tabindex="-1">Hard</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Row 3: Soundboard Settings (Volume & Waveform) -->
+        <div class="settings-row soundboard-row">
+          <div class="setting-group flex-1">
+            <span class="setting-label">Synth Instrument</span>
+            <select id="synth-waveform" class="custom-select" aria-label="Synthesizer Instrument Type">
+              <option value="sine">Sine Pop</option>
+              <option value="square">8-Bit Retro</option>
+              <option value="triangle">Synth Pad</option>
+            </select>
+          </div>
+          
+          <div class="setting-group flex-1">
+            <span class="setting-label">Volume</span>
+            <div class="volume-slider-container">
+              <input type="range" id="volume-control" class="volume-slider" min="0" max="100" value="30" aria-label="Game Volume Slider">
+              <span id="volume-value" class="volume-display-val">30%</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Status Turn Indicator -->
+      <section class="turn-indicator-bar" aria-live="polite">
+        <span class="turn-label">Current Turn</span>
+        <div id="turn-display" class="turn-badge turn-x">
+          <span class="turn-letter">X</span>
+        </div>
+      </section>
+
+      <!-- Grid Board (Dynamic Population & SVG Overlay) -->
+      <section class="board-container">
+        <div class="board-wrapper">
+          <!-- Main Grid Board (populated dynamically by JS) -->
+          <div id="game-board" class="board-grid classic-mode" role="grid" aria-label="Tic-Tac-Toe Grid"></div>
+          
+          <!-- Laser Slicer SVG Overlay -->
+          <svg id="laser-overlay" class="laser-overlay-svg" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <filter id="laser-glow-x" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="6" result="blur"></feGaussianBlur>
+                <feMerge>
+                  <feMergeNode in="blur"></feMergeNode>
+                  <feMergeNode in="SourceGraphic"></feMergeNode>
+                </feMerge>
+              </filter>
+              <filter id="laser-glow-o" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="6" result="blur"></feGaussianBlur>
+                <feMerge>
+                  <feMergeNode in="blur"></feMergeNode>
+                  <feMergeNode in="SourceGraphic"></feMergeNode>
+                </feMerge>
+              </filter>
+            </defs>
+            <line id="laser-line" x1="0" y1="0" x2="0" y2="0" class="laser-line-element hidden-line"></line>
+          </svg>
+        </div>
+      </section>
+
+      <!-- Scoreboard -->
+      <section class="scoreboard" aria-label="Score Tracker">
+        <div class="score-card score-x">
+          <div class="score-title">Player X</div>
+          <div id="score-val-x" class="score-value">0</div>
+        </div>
+        <div class="score-card score-draw">
+          <div class="score-title">Draws</div>
+          <div id="score-val-draw" class="score-value">0</div>
+        </div>
+        <div class="score-card score-o">
+          <div class="score-title">Player O</div>
+          <div id="score-val-o" class="score-value">0</div>
+        </div>
+      </section>
+
+      <!-- Control Panel -->
+      <section class="controls-panel">
+        <button id="btn-restart" class="action-btn primary-btn" title="Clear board and start a new round">
+          <span class="btn-icon">🔄</span> Restart Match
+        </button>
+        <button id="btn-reset-scores" class="action-btn secondary-btn" title="Reset all score values to zero">
+          <span class="btn-icon">🗑️</span> Reset Scores
+        </button>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>Nexus T3 Engine &bull; Designed with Vanilla HTML, CSS & JS</p>
+    </footer>
+  </div>
+
+  <!-- Custom Game Over Overlay -->
+  <div id="game-over-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-card glass-panel animated-modal">
+      <h2 id="modal-title" class="modal-heading">Match Complete</h2>
+      
+      <!-- Highlight Display -->
+      <div class="result-banner">
+        <div id="result-visual" class="result-avatar">
+          <!-- Dynamically populated winner SVG or emoji -->
+        </div>
+        <div id="result-text" class="result-message">Player X Wins!</div>
+      </div>
+
+      <div class="modal-actions">
+        <button id="modal-btn-next" class="action-btn primary-btn">
+          Continue
+        </button>
+        <button id="modal-btn-reset" class="action-btn secondary-btn">
+          New Match
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JS Implementation -->
+  <script src="script.js"></script>
+</body>
+</html>

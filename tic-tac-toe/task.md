@@ -1,0 +1,34 @@
+# Tasks - Tic-Tac-Toe Web Application
+
+- [x] Create project files under `tic-tac-toe/`
+  - [x] Initialize `index.html` with semantic structure and SVGs
+  - [x] Initialize `style.css` with dark/light themes and modern styling
+  - [x] Initialize `script.js` with modular game engine
+- [x] Implement Core Game Logic (script.js)
+  - [x] 3x3 board state management
+  - [x] Alternating player turns
+  - [x] Winner & Draw detection
+  - [x] Game state resets (Restart, New Game, Reset Scores)
+- [x] Implement Web Audio API Sounds (script.js)
+  - [x] Synthesize move click sound
+  - [x] Synthesize win chime
+  - [x] Synthesize draw double-pulse sound
+- [x] Implement AI Opponent Engine (script.js)
+  - [x] Easy mode: Random moves
+  - [x] Hard mode: Perfect Minimax with alpha-beta and depth calculation
+  - [x] Human-like delay after player move
+- [x] UI, Theme & Visual Design (style.css, index.html)
+  - [x] Theme controller (Light/Dark mode + LocalStorage persistence)
+  - [x] Neon glow accents and glassmorphism styling
+  - [x] Smooth drawing animations for X (cyan) and O (pink) markers
+  - [x] Page entrance loading screen and intro animations
+  - [x] Particle background animation (HTML5 Canvas in JS or CSS particles)
+- [x] Accessibility & Responsiveness (index.html, style.css, script.js)
+  - [x] Fully responsive aspect-ratio layout (mobile-first)
+  - [x] Keyboard grid navigation support (Arrow keys + Enter/Space)
+  - [x] High color contrast, visible focus outlines, and ARIA attributes
+- [x] Verification & Testing
+  - [x] Manual test: Game flows and score updates
+  - [x] Manual test: Hard AI is unbeatable
+  - [x] Manual test: Sound triggers in different environments
+  - [x] Manual test: Responsiveness and accessibility
