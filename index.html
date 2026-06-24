@@ -552,6 +552,13 @@
       margin-bottom: 24px;
     }
 
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
     .sensor-widget-card {
       display: flex;
       flex-direction: column;
@@ -640,6 +647,11 @@
       box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.4), 0 0 20px rgba(16, 185, 129, 0.1);
     }
 
+    .aqi-dial-glow:hover {
+      border-color: rgba(6, 182, 212, 0.3);
+      box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.4), 0 0 20px rgba(6, 182, 212, 0.1);
+    }
+
     /* SENSOR PROGRESS BARS */
     .sensor-bar {
       height: 6px;
@@ -666,6 +678,10 @@
 
     #humBar {
       background: linear-gradient(90deg, #10b981 0%, #059669 100%) !important;
+    }
+
+    #aqiBar {
+      background: linear-gradient(90deg, #10b981 0%, #f59e0b 50%, #dc2626 100%) !important;
     }
 
     /* MAIN ANALYTICAL AREA */
@@ -1093,7 +1109,7 @@
       .hero-split-grid {
         grid-template-columns: 1fr;
       }
-      .grid-3, .grid-charts {
+      .grid-3, .grid-4, .grid-charts {
         grid-template-columns: 1fr;
       }
       .stat-row {
@@ -1286,6 +1302,21 @@
           <span id="uptimeEstimate" style="font-family: var(--mono); color: #fff;">100.0%</span>
         </div>
       </div>
+      <!-- TELEMETRY METRIC DETAILS -->
+      <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.04); font-size: 10px; color: var(--dim); display: flex; flex-direction: column; gap: 4px;">
+        <div style="display:flex; justify-content:space-between;">
+          <span>API Response:</span>
+          <span id="telemetryResponseTime" style="font-family: var(--mono); color: #fff;">-- ms</span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span>Refresh Freq:</span>
+          <span id="telemetryInterval" style="font-family: var(--mono); color: #fff;">5s</span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span>Link Quality:</span>
+          <span id="telemetryQuality" style="font-weight: 700; color: var(--green);">SCANNING</span>
+        </div>
+      </div>
     </div>
     <div class="clock" id="clock" style="margin-top:8px;">--:--:--</div>
   </div>
@@ -1412,7 +1443,7 @@
   </div>
 
   <!-- KPI SENSOR CARDS -->
-  <div class="grid-3">
+  <div class="grid-4">
     <!-- GAS WIDGET -->
     <div class="panel sensor-widget-card gas-dial-glow">
       <div class="panel-label">Gas Concentration · MQ-2</div>
@@ -1462,6 +1493,24 @@
           <div class="sensor-metric-advisory">DHT11 capacitive sensor</div>
           <div class="sensor-bar">
             <div class="sensor-bar-fill" id="humBar" style="width:0%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AQI WIDGET -->
+    <div class="panel sensor-widget-card aqi-dial-glow">
+      <div class="panel-label">Air Quality Index · AQI</div>
+      <div class="sensor-dial-container">
+        <div class="sensor-circle-wrap">
+          <div class="sensor-circle-val" id="aqiVal">---</div>
+          <div class="sensor-circle-unit">AQI <span id="aqiTrend" style="font-size: 11px;">●</span></div>
+        </div>
+        <div class="sensor-dial-meta">
+          <div class="sensor-metric-status" id="aqiStatus" style="font-weight: 700;">Scanning</div>
+          <div class="sensor-metric-advisory" id="aqiAdvisory">Calculating index...</div>
+          <div class="sensor-bar">
+            <div class="sensor-bar-fill" id="aqiBar" style="width:0%"></div>
           </div>
         </div>
       </div>
@@ -1557,7 +1606,7 @@
               </div>
               <div style="font-size: 10px; color: var(--dim); margin-top: 2px; display: flex; justify-content: space-between; align-items: baseline;">
                 <span>Conf: <span id="predictConf" style="font-family: var(--mono); color: var(--amber); font-weight: 600;">--</span></span>
-                <span style="font-size: 9px;">Est: <span id="predictEstPPM" style="color: #fff; font-family: var(--mono); font-weight: 600;">--</span> PPM</span>
+                <span style="font-size: 9px;">Est: <span id="predictEstPPM" style="color: #fff; font-family: var(--mono); font-weight: 600;">--</span> PPM (<span id="predictEstAQI" style="color: var(--amber); font-family: var(--mono); font-weight: 600;">--</span> AQI)</span>
               </div>
               <div style="font-size: 9px; color: var(--dim2); text-align: right; margin-top: 1px;">Rate: <span id="predictGrowthRate" style="font-family: var(--mono);">--</span> PPM/m</div>
             </div>
@@ -1846,6 +1895,17 @@ const CITY = CONFIG.CITY;
   let currentAlarmState = 'Safe';
   let alarmIntervalId = null;
   let audioCtx = null;
+  
+  // AQI MODULE & REFRESH TIMERS STATE
+  let lastAqiCategory = null;
+  let isFetchingDashboard = false;
+  let isFetchingHistory = false;
+  let currentTSRefreshInterval = 5000;
+  let dashboardTimeoutId = null;
+  let historyTimeoutId = null;
+  const MIN_TS_REFRESH = 5000;
+  const MAX_TS_REFRESH = 30000;
+  const HISTORY_REFRESH_INTERVAL = 45000;
 
   // CLOCK
   setInterval(() => {
@@ -1858,7 +1918,15 @@ const CITY = CONFIG.CITY;
     document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
     document.getElementById('page-' + id).classList.add('active');
     el.classList.add('active');
-    if (id === 'history') fetchHistory();
+    if (id === 'history') {
+      fetchHistory();
+      scheduleHistoryFetch();
+    } else {
+      if (historyTimeoutId) {
+        clearTimeout(historyTimeoutId);
+        historyTimeoutId = null;
+      }
+    }
   }
 
   // LOG / NOTIFICATION CENTER
@@ -1950,9 +2018,49 @@ const CITY = CONFIG.CITY;
     return ['--','GOOD','FAIR','MODERATE','POOR','VERY POOR'][aqi] || '--';
   }
 
+  function calculateRealAQI(ppm) {
+    if (ppm === null || isNaN(ppm) || ppm === undefined || ppm < 0) return null;
+    
+    // Breakpoints: [ppm_min, ppm_max, aqi_min, aqi_max]
+    const bp = [
+      [0, 150, 0, 50],
+      [150, 350, 51, 100],
+      [350, 600, 101, 150],
+      [600, 1000, 151, 200],
+      [1000, 2000, 201, 300],
+      [2000, 5000, 301, 500]
+    ];
+    
+    let aqi = 0;
+    if (ppm > 5000) {
+      aqi = Math.round(500 + ((ppm - 5000) / 1000) * 50);
+      return Math.min(aqi, 999);
+    }
+    
+    for (let i = 0; i < bp.length; i++) {
+      const [cLow, cHigh, iLow, iHigh] = bp[i];
+      if (ppm >= cLow && ppm <= cHigh) {
+        aqi = ((iHigh - iLow) / (cHigh - cLow)) * (ppm - cLow) + iLow;
+        break;
+      }
+    }
+    return Math.round(aqi);
+  }
+
+  function getAQICategory(aqi) {
+    if (aqi === null || isNaN(aqi)) return { label: "INSUFFICIENT DATA", color: "var(--dim)", desc: "No telemetry available." };
+    if (aqi <= 50) return { label: "Good", color: "var(--green)", desc: "Air quality is healthy." };
+    if (aqi <= 100) return { label: "Moderate", color: "var(--green2)", desc: "Sensitive individuals should monitor conditions." };
+    if (aqi <= 150) return { label: "Unhealthy for Sensitive Groups", color: "var(--yellow)", desc: "Increase ventilation and reduce exposure." };
+    if (aqi <= 200) return { label: "Unhealthy", color: "var(--amber2)", desc: "Increase ventilation and reduce exposure." };
+    if (aqi <= 300) return { label: "Very Unhealthy", color: "#a855f7", desc: "Immediate corrective action recommended." };
+    return { label: "Hazardous", color: "var(--red)", desc: "Evacuate area and ventilate immediately." };
+  }
+
   function calculateEHI(gas, temp, hum, outAqiIndex) {
     if (gas === null || temp === null || hum === null || isNaN(gas) || isNaN(temp) || isNaN(hum)) return null;
-    const gasScore = calculateAQIScore(gas);
+    const realAqi = calculateRealAQI(gas);
+    const gasScore = realAqi !== null ? Math.max(0, 100 - (realAqi / 500) * 100) : 100;
     const tempScore = Math.max(0, 100 - Math.abs(temp - 22.5) * 6.5);
     const humScore = Math.max(0, 100 - Math.abs(hum - 50) * 2.2);
     const outAqiScore = (5 - Math.max(1, Math.min(5, outAqiIndex || 1))) * 25;
@@ -2039,7 +2147,7 @@ const CITY = CONFIG.CITY;
   // ============================================
   function predictAirQuality(feeds) {
     if (!feeds || feeds.length < 4) {
-      return { status: "Insufficient Data", confidence: "--", estPPM: "--", rate: "--", direction: "●" };
+      return { status: "Insufficient Data", confidence: "--", estPPM: "--", estAQI: "--", rate: "--", direction: "●" };
     }
     const gasValues = feeds.map(f => parseFloat(f.field1) || 0);
     const timePoints = feeds.map(f => new Date(f.created_at).getTime());
@@ -2065,6 +2173,7 @@ const CITY = CONFIG.CITY;
     const latestGas = gasValues[n - 1];
     const projectedGas = Math.max(0, latestGas + slope * 30);
     const projectedScore = calculateAQIScore(projectedGas);
+    const projectedAqi = calculateRealAQI(projectedGas);
     
     let status = "EXCELLENT";
     if (projectedScore < 25) status = "HAZARDOUS";
@@ -2091,6 +2200,7 @@ const CITY = CONFIG.CITY;
       status,
       confidence: confidenceText,
       estPPM: Math.round(projectedGas),
+      estAQI: projectedAqi !== null ? Math.round(projectedAqi) : "--",
       rate: slope.toFixed(1),
       direction
     };
@@ -2103,17 +2213,21 @@ const CITY = CONFIG.CITY;
     if (gas === null || temp === null || hum === null) return "System loading: waiting for telemetry signals.";
     
     let recs = [];
-    const score = calculateAQIScore(gas);
     const comfort = calculateComfortScore(temp, hum);
+    const aqi = calculateRealAQI(gas);
     
-    if (score < 25) {
-      recs.push("Air quality is hazardous: evacuate area immediately.");
-    } else if (score < 50) {
-      recs.push("Air quality is poor: open windows for ventilation.");
-    } else if (score < 75) {
-      recs.push("Occupancy warning: reduce density if gas continues to rise.");
-    } else {
-      recs.push("Air quality is nominal.");
+    if (aqi !== null) {
+      if (aqi <= 50) {
+        recs.push("AQI Good: Air quality is healthy.");
+      } else if (aqi <= 100) {
+        recs.push("AQI Moderate: Sensitive individuals should monitor conditions.");
+      } else if (aqi <= 200) {
+        recs.push("AQI Unhealthy: Increase ventilation and reduce exposure.");
+      } else if (aqi <= 300) {
+        recs.push("AQI Very Unhealthy: Immediate corrective action recommended.");
+      } else {
+        recs.push("AQI Hazardous: Evacuate area and ventilate immediately.");
+      }
     }
 
     if (comfort < 50) {
@@ -2394,6 +2508,10 @@ const CITY = CONFIG.CITY;
     const score = calculateAQIScore(parseFloat(ppm) || null);
     const scoreText = score !== null ? `${score}/100` : "Insufficient Data";
     const risk = document.getElementById('statusWord').textContent;
+    const aqiVal = document.getElementById('aqiVal').textContent;
+    const aqiStatus = document.getElementById('aqiStatus').textContent;
+    const aqiTrend = document.getElementById('aqiTrend').textContent;
+    const estAQI = document.getElementById('predictEstAQI') ? document.getElementById('predictEstAQI').textContent : "--";
     const tempVal = document.getElementById('tempVal').textContent;
     const temp = tempVal !== "---" ? parseFloat(tempVal) : null;
     const humVal = document.getElementById('humVal').textContent;
@@ -2524,11 +2642,16 @@ const CITY = CONFIG.CITY;
           </div>
           
           <div class="section-title">Telemetry Sensor Readings</div>
-          <div class="grid-3">
+          <div class="grid-4">
             <div class="card">
               <div class="card-label">Gas Level</div>
               <div class="card-val">${ppm} PPM</div>
-              <div class="card-sub">AQI Score: ${scoreText} (${risk})</div>
+              <div class="card-sub">Uplink Nominal</div>
+            </div>
+            <div class="card">
+              <div class="card-label">Air Quality Index</div>
+              <div class="card-val">${aqiVal} AQI</div>
+              <div class="card-sub">${aqiStatus} (${aqiTrend})</div>
             </div>
             <div class="card">
               <div class="card-label">Temperature</div>
@@ -2547,7 +2670,7 @@ const CITY = CONFIG.CITY;
             <div class="card">
               <div class="card-label">30-Minute Risk Prediction</div>
               <div class="card-val" style="font-size: 14px; margin-top:6px;">Status: <strong>${predStatus}</strong></div>
-              <div style="font-size: 11px; color:#555; margin-top:2px;">Est: ${estPPM} PPM | Confidence: ${predConf}</div>
+              <div style="font-size: 11px; color:#555; margin-top:2px;">Est: ${estPPM} PPM (${estAQI} AQI) | Confidence: ${predConf}</div>
             </div>
             <div class="card">
               <div class="card-label">Data Quality Checksum</div>
@@ -2750,20 +2873,122 @@ const CITY = CONFIG.CITY;
   }
 
   // ============================================
+  // TELEMETRY REFRESH STATUS & BACKOFF HELPERS
+  // ============================================
+  function handleTSBackoff(reason) {
+    if (currentTSRefreshInterval < MAX_TS_REFRESH) {
+      currentTSRefreshInterval = Math.min(MAX_TS_REFRESH, currentTSRefreshInterval * 2);
+      log(`[API WARNING] ${reason}. Backing off refresh rate to ${currentTSRefreshInterval/1000}s.`, 'warn');
+      updateTelemetryStatusWidget();
+    }
+  }
+  
+  function resetTSBackoff() {
+    if (currentTSRefreshInterval > MIN_TS_REFRESH) {
+      currentTSRefreshInterval = MIN_TS_REFRESH;
+      log(`[API INFO] ThingSpeak recovery. Restoring refresh rate to 5s.`, 'ok');
+      updateTelemetryStatusWidget();
+    }
+  }
+
+  function scheduleDashboardFetch() {
+    if (dashboardTimeoutId) {
+      clearTimeout(dashboardTimeoutId);
+    }
+    dashboardTimeoutId = setTimeout(async () => {
+      await fetchDashboard();
+      scheduleDashboardFetch();
+    }, currentTSRefreshInterval);
+  }
+
+  function scheduleHistoryFetch() {
+    if (historyTimeoutId) {
+      clearTimeout(historyTimeoutId);
+    }
+    historyTimeoutId = setTimeout(async () => {
+      const historyPage = document.getElementById('page-history');
+      if (historyPage && historyPage.classList.contains('active')) {
+        await fetchHistory();
+        scheduleHistoryFetch();
+      }
+    }, HISTORY_REFRESH_INTERVAL);
+  }
+
+  function updateTelemetryStatusWidget(responseTime = null, failed = false) {
+    const respTimeEl = document.getElementById('telemetryResponseTime');
+    const intervalEl = document.getElementById('telemetryInterval');
+    const qualityEl = document.getElementById('telemetryQuality');
+    
+    if (intervalEl) {
+      intervalEl.textContent = `${currentTSRefreshInterval / 1000}s`;
+    }
+    
+    if (failed) {
+      if (respTimeEl) respTimeEl.textContent = "N/A";
+      if (qualityEl) {
+        qualityEl.textContent = "FAILED";
+        qualityEl.style.color = "var(--red)";
+      }
+      return;
+    }
+    
+    if (responseTime !== null) {
+      if (respTimeEl) respTimeEl.textContent = `${responseTime}ms`;
+      if (qualityEl) {
+        let qualityText = "EXCELLENT";
+        let qualityColor = "var(--green)";
+        
+        if (currentTSRefreshInterval > MIN_TS_REFRESH) {
+          qualityText = "BACKED OFF";
+          qualityColor = "var(--yellow)";
+        } else if (responseTime < 250) {
+          qualityText = "EXCELLENT";
+          qualityColor = "var(--green)";
+        } else if (responseTime < 600) {
+          qualityText = "GOOD";
+          qualityColor = "var(--green2)";
+        } else {
+          qualityText = "FAIR";
+          qualityColor = "var(--yellow)";
+        }
+        
+        qualityEl.textContent = qualityText;
+        qualityEl.style.color = qualityColor;
+      }
+    }
+  }
+
+  // ============================================
   // FETCH THINGSPEAK (dashboard - 8 readings)
   // ============================================ 
   async function fetchDashboard() {
+    if (isFetchingDashboard) return;
+    isFetchingDashboard = true;
     totalUplinksAttempted++;
+    const fetchStartTime = Date.now();
     try {
       const r = await fetch(`https://api.thingspeak.com/channels/${THINGSPEAK_CHANNEL_ID}/feeds.json?api_key=${THINGSPEAK_READ_API_KEY}&results=8`);
+      
+      if (!r.ok) {
+        if (r.status === 429) {
+          handleTSBackoff("ThingSpeak rate limit (429)");
+        }
+        throw new Error(`HTTP error ${r.status}`);
+      }
+      
+      resetTSBackoff();
+      
       const d = await r.json();
       const feeds = d.feeds;
       if (!feeds?.length) { 
         log('No data received from ThingSpeak', 'warn'); 
         updateSensorHealth('healthTS', 'health-warn', 'NO DATA');
+        updateTelemetryStatusWidget(null, true);
         return; 
       }
 
+      const responseTime = Date.now() - fetchStartTime;
+      updateTelemetryStatusWidget(responseTime, false);
       totalUplinksSuccessful++;
 
       const labels = feeds.map(f => new Date(f.created_at).toTimeString().slice(0,5));
@@ -2797,6 +3022,49 @@ const CITY = CONFIG.CITY;
       document.getElementById('compIndHum').textContent = hum.toFixed(1)+'%';
       document.getElementById('statusPPM').textContent = gas.toFixed(0);
       document.getElementById('footerChannel').textContent = `CH ${THINGSPEAK_CHANNEL_ID} · THINGSPEAK`;
+
+      // New AQI Calculation & Displays
+      const aqiVal = calculateRealAQI(gas);
+      const aqiCat = getAQICategory(aqiVal);
+      
+      document.getElementById('aqiVal').textContent = aqiVal !== null ? aqiVal : "---";
+      const aqiStatusEl = document.getElementById('aqiStatus');
+      if (aqiStatusEl) {
+        aqiStatusEl.textContent = aqiCat.label.toUpperCase();
+        aqiStatusEl.style.color = aqiCat.color;
+      }
+      const aqiAdvisoryEl = document.getElementById('aqiAdvisory');
+      if (aqiAdvisoryEl) {
+        aqiAdvisoryEl.textContent = aqiCat.desc;
+      }
+      const aqiBarEl = document.getElementById('aqiBar');
+      if (aqiBarEl && aqiVal !== null) {
+        aqiBarEl.style.width = Math.min((aqiVal / 500) * 100, 100) + '%';
+      }
+
+      // Trend analysis
+      let trendSymbol = "●";
+      if (feeds.length >= 2) {
+        const prevGasVal = parseFloat(feeds[feeds.length - 2].field1) || 0;
+        const prevAqiVal = calculateRealAQI(prevGasVal);
+        if (aqiVal > prevAqiVal) trendSymbol = "▲";
+        else if (aqiVal < prevAqiVal) trendSymbol = "▼";
+      }
+      const trendEl = document.getElementById('aqiTrend');
+      if (trendEl) {
+        trendEl.textContent = trendSymbol;
+        if (trendSymbol === "▲") trendEl.style.color = "var(--red)";
+        else if (trendSymbol === "▼") trendEl.style.color = "var(--green)";
+        else trendEl.style.color = "var(--dim)";
+      }
+
+      // Category Change Notification
+      if (aqiVal !== null) {
+        if (lastAqiCategory !== null && lastAqiCategory !== aqiCat.label) {
+          log(`[NOTIFICATION] Indoor Air Quality changed to ${aqiCat.label.toUpperCase()} (${aqiVal} AQI)`, "info");
+        }
+        lastAqiCategory = aqiCat.label;
+      }
 
       // Score Engine (EHI & Comfort & Green score)
       const ehi = calculateEHI(gas, temp, hum, outdoorAQIValue);
@@ -2845,6 +3113,8 @@ const CITY = CONFIG.CITY;
       document.getElementById('predictStatus').style.color = statusColor;
       document.getElementById('predictConf').textContent = riskPredict.confidence;
       document.getElementById('predictEstPPM').textContent = riskPredict.estPPM;
+      const predEstAQIEl = document.getElementById('predictEstAQI');
+      if (predEstAQIEl) predEstAQIEl.textContent = riskPredict.estAQI;
       document.getElementById('predictGrowthRate').textContent = riskPredict.rate;
       
       const dirEl = document.getElementById('predictDirection');
@@ -2874,13 +3144,13 @@ const CITY = CONFIG.CITY;
       document.getElementById('statusText').textContent = 'LIVE';
       document.getElementById('statusText').style.color = 'var(--green)';
 
-      // Hazard Alerts sound & banner states
+      // Hazard Alerts sound & banner states (re-aligned to calculated AQI)
       let alarmState = 'Safe';
-      if (gas >= 1000) {
+      if (aqiVal >= 301) {
         alarmState = 'Critical';
-      } else if (gas >= 500) {
+      } else if (aqiVal >= 201) {
         alarmState = 'Danger';
-      } else if (gas >= 200) {
+      } else if (aqiVal >= 101) {
         alarmState = 'Warning';
       }
       setAlarmSoundLoop(alarmState);
@@ -2900,12 +3170,12 @@ const CITY = CONFIG.CITY;
           }
           banner.style.background = bannerBg;
           banner.style.borderColor = bannerBorder;
-          document.getElementById('hazardAlertText').textContent = `Gas level is elevated (${gas.toFixed(0)} PPM)! Please ventilate the area immediately.`;
+          document.getElementById('hazardAlertText').textContent = `Air Quality Index is elevated (${aqiVal} AQI - ${aqiCat.label.toUpperCase()})! Please ventilate the area immediately.`;
         }
-        if (gas >= 1000) {
-          log(`[CRITICAL HAZARD] Gas level exceeds safe threshold: ${gas.toFixed(0)} PPM!`, "error");
+        if (aqiVal >= 301) {
+          log(`[CRITICAL HAZARD] Air Quality Index is hazardous: ${aqiVal} AQI!`, "error");
         } else {
-          log(`[HAZARD WARNING] Gas level is elevated: ${gas.toFixed(0)} PPM!`, "warn");
+          log(`[HAZARD WARNING] Air Quality Index is elevated: ${aqiVal} AQI!`, "warn");
         }
       } else {
         if (banner) banner.style.display = 'none';
@@ -2923,7 +3193,7 @@ const CITY = CONFIG.CITY;
       updateSensorHealth('healthTS', 'health-ok', 'NOMINAL');
       lastTSFetchSuccessTime = Date.now();
 
-      log(`Uplink received — Gas: ${gas.toFixed(0)}ppm | Temp: ${temp.toFixed(1)}°C | Hum: ${hum.toFixed(1)}% | EHI: ${ehi}/100`, ehiInfo.class === 'health-ok' ? 'ok' : ehiInfo.class === 'health-err' ? 'error' : 'warn');
+      log(`Uplink received — Gas: ${gas.toFixed(0)}ppm | AQI: ${aqiVal} | Temp: ${temp.toFixed(1)}°C | Hum: ${hum.toFixed(1)}% | EHI: ${ehi}/100`, ehiInfo.class === 'health-ok' ? 'ok' : ehiInfo.class === 'health-err' ? 'error' : 'warn');
     } catch(e) {
       log('ThingSpeak uplink failed: '+e.message, 'error');
       document.getElementById('statusText').textContent = 'ERROR';
@@ -2934,6 +3204,9 @@ const CITY = CONFIG.CITY;
       updateSensorHealth('healthTS', 'health-err', 'FAILED');
       updateSensorHealth('healthMQ2', 'health-warn', 'UNKNOWN');
       updateSensorHealth('healthDHT11', 'health-warn', 'UNKNOWN');
+      updateTelemetryStatusWidget(null, true);
+    } finally {
+      isFetchingDashboard = false;
     }
     
     // Update system uptime estimate in sidebar
@@ -2998,6 +3271,8 @@ const CITY = CONFIG.CITY;
 
   // FETCH HISTORY (30 readings)
   async function fetchHistory() {
+    if (isFetchingHistory) return;
+    isFetchingHistory = true;
     try {
       const r = await fetch(`https://api.thingspeak.com/channels/${THINGSPEAK_CHANNEL_ID}/feeds.json?api_key=${THINGSPEAK_READ_API_KEY}&results=30`);
       const d = await r.json();
@@ -3113,6 +3388,8 @@ const CITY = CONFIG.CITY;
       });
     } catch(e) {
       log('History fetch failed: '+e.message, 'error');
+    } finally {
+      isFetchingHistory = false;
     }
   }
 
@@ -3153,9 +3430,10 @@ const CITY = CONFIG.CITY;
   // INIT
   log('AirWatch system initialising...', 'info');
   log('Establishing ThingSpeak uplink...', 'info');
-  fetchDashboard();
   fetchWeather();
-  setInterval(fetchDashboard, 20000);
+  fetchDashboard().then(() => {
+    scheduleDashboardFetch();
+  });
   setInterval(fetchWeather, 60000);
 </script>
 
