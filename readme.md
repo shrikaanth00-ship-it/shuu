@@ -18,6 +18,7 @@ A real-time environmental monitoring system built with ESP32, MQ-2, and DHT11 se
 
 ## Dashboard
 Built with vanilla HTML/CSS/JS. Dark control panel aesthetic.
+Live Site: [https://airwatchidt.netlify.app/](https://airwatchidt.netlify.app/)
 
 ## Setup
 1. Flash `airwatch.ino` to ESP32 via Arduino IDE
